@@ -1,0 +1,17 @@
+#ERRORS
+
+ER_INV_PASS: error invalid password
+ER_UNK_USER: error unknown user
+ER_CHK_EMP: error check email/password
+ER_BAD_PEP: error bad pseudo email password
+ER_EMP_PUB: error empty publication
+
+# SUCCESS
+
+SCS_PBSH_PUB: succes publish publication
+SCS_IN_REG: in success register
+
+
+
+
+//SCS_GET_PUB: success get publications

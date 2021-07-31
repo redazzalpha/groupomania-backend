@@ -1,3 +1,4 @@
+const jwt = require('jsonwebtoken');
 require("dotenv").config();
 
 const services = {
@@ -19,21 +20,38 @@ const services = {
         };
         
         if (regex.min8(passwd)) {
-            if( !regex.digit.test(passwd) )
+            if (!regex.digit.test(passwd))
                 ok++;
-            if( !regex.lowercase.test(passwd))
+            if (!regex.lowercase.test(passwd))
                 ok++;
-            if( !regex.uppercase.test(passwd))
+            if (!regex.uppercase.test(passwd))
                 ok++;
             if (!regex.special.test(passwd))
                 ok++;
             if (regex.space.test(passwd))
                 ok++;
         }
-        return !ok ;     
+        return !ok;
     },
     checkPublication: publication => {
         return !/^\s+$/gi.test(publication);
+    },
+    generateTkn: result => {
+        const token = jwt.sign(
+            {
+                id: result.id,
+                pseudo: result.pseudo,
+                email: result.email,
+                password: result.password,
+                rights: result.rights,
+            },
+            process.env.SEC_SES,
+            { expiresIn: process.env.SEC_SES_LIFE }
+        );
+        return token;
+    },
+    generateTknRfh: result => {
+        return jwt.sign({ id: result.id }, process.env.SEC_SES_REFRESH, { expiresIn: process.env.SEC_SES_REFRESH_LIFE });
     },
 };
 

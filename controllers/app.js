@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const services = require("../services/server.service");
 
 exports.home = (req, res) => {
-    res.status(200).json({ message: "successfully in home" });
+    res.status(200).json(req.decoded);
 };
 exports.profil = (req, res) => {
     res.status(200).json({ message: "successfully in profil" });
@@ -26,10 +26,11 @@ exports.publish = (req, res) => {
                 
                 const author = decoded.email;
                 const pseudo = decoded.pseudo;
+                const img = decoded.img;
                 const text = req.body.publication;
 
                 // get hash password from database 
-                mysql.query(`insert into publication (author, pseudo, text, postLike, postDislike) values ("${author}", "${pseudo}", "${text}", 0, 0)`, (error) => {
+                mysql.query(`insert into publication (author, pseudo, img, text, postLike, postDislike) values ("${author}", "${pseudo}", "${img}", "${text}", 0, 0)`, (error) => {
                     if (error)
                         return res.status(500).json({ error });
                     res.status(201).json({ message: "Publication successfully sent", code: "SCS_PBSH_PUB" });

@@ -42,6 +42,7 @@ const services = {
                 id: result.id,
                 pseudo: result.pseudo,
                 email: result.email,
+                img: result.img,
                 password: result.password,
                 rights: result.rights,
             },

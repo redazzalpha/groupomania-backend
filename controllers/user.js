@@ -12,7 +12,7 @@ exports.login = (req, res) => {
     if (services.checkEmail(email) && services.checkPasswd(password)) {
         
         // get hash password from database 
-        mysql.query(`select id, pseudo, email, password, rights from user where email="${email}"`, (error, results) => {
+        mysql.query(`select * from user where email="${email}"`, (error, results) => {
             if (error)
                 return res.status(500).json({ error });
             

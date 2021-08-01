@@ -32,10 +32,10 @@ exports.login = (req, res) => {
                     if (!ready)
                         return res.status(401).json({ error: { message: "Invalid password", code: "ER_INV_PASS" } });
                     
-                    //  return object with userId value and a new token
+                    //  send token
                     const data = {
                         token: services.generateTkn(result),
-                        tokenRefresh: services.generateTknRfh(result),
+                        tokenRfsh: services.generateTknRfsh(result),
                     };
                     res.status(200).json({ data });
                 });
@@ -73,13 +73,8 @@ exports.register = (req, res) => {
                 mysql.query(`insert into user (pseudo, email, password, rights) values ("${fields.pseudo}", "${fields.email}", "${hash}", "${fields.rights}") `, (error) => {
 
                     if (error)
-                        return res.status(500).json({ error });
-                    
-                    const data = {
-                        token: services.generateTkn(fields),
-                        tokenRefresh: services.generateTknRfh(fields),
-                    };
-                    res.status(201).json({ data });
+                        return res.status(500).json({ error });                    
+                    res.status(201).json({ messsage: "New user created successfully", code: "SCS_IN_REG" });
                 });
             });
 

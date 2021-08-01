@@ -50,7 +50,7 @@ const services = {
         );
         return token;
     },
-    generateTknRfh: result => {
+    generateTknRfsh: result => {
         return jwt.sign({ id: result.id }, process.env.SEC_SES_REFRESH, { expiresIn: process.env.SEC_SES_REFRESH_LIFE });
     },
 };

@@ -1,4 +1,5 @@
 const mysql = require("../mysql");
+const jwt = require('jsonwebtoken');
 const services = require("../services/server.service");
 
 exports.home = (req, res) => {
@@ -14,19 +15,28 @@ exports.team = (req, res) => {
     res.status(200).json({ message: "successfully in team" });
 };
 exports.publish = (req, res) => {
-    const publication = req.body.publication;
-    if (services.checkPublication(publication)) {
+    if (services.checkPublication(req.body.publicationn)) {
 
-        const author = req.body.author;
-        const text = req.body.publication;
-        const pseudo = req.body.pseudo;
+        if (req.headers.authorization) {
+            const token = req.headers.authorization.split(" ")[1];
+            jwt.verify(token, process.env.SEC_SES, (error, decoded) => {
+
+                if (error)
+                    return res.status(401).json({ error });
                 
-        // get hash password from database 
-        mysql.query(`insert into publication (author, pseudo, text, postLike, postDislike) values ("${author}", "${pseudo}", "${text}", 0, 0)`, (error) => {
-            if (error)
-                return res.status(500).json({ error });
-            res.status(201).json({ message: "Publication successfully sent", code: "SCS_PBSH_PUB" });
-        });
+                const author = decoded.email;
+                const pseudo = decoded.pseudo;
+                const text = req.body.publication;
+
+                // get hash password from database 
+                mysql.query(`insert into publication (author, pseudo, text, postLike, postDislike) values ("${author}", "${pseudo}", "${text}", 0, 0)`, (error) => {
+                    if (error)
+                        return res.status(500).json({ error });
+                    res.status(201).json({ message: "Publication successfully sent", code: "SCS_PBSH_PUB" });
+                });    
+            });
+        }
+        else return res.status(400).json({error: { message: "token autentification failed", code: "ER_JWT_AUTH" }});                
     }
     else return res.status(401).json({ error: { message: "Publication is empty", code: "ER_EMP_PUB" } });
 };

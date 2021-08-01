@@ -9,7 +9,8 @@ ER_EMP_PUB: error empty publication
 # SUCCESS
 
 SCS_PBSH_PUB: succes publish publication
-SCS_IN_REG: in success register
+SCS_PST_CMT: succes post comment 
+SCS_IN_REG: success in register
 
 
 

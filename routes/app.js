@@ -7,7 +7,8 @@ router.get("/home", auth, appCtrl.home);
 router.get("/profil", auth, appCtrl.profil);
 router.get("/notification", auth, appCtrl.notification);
 router.get("/team", auth, appCtrl.team);
-router.post("/publish", auth, appCtrl.publish);
 router.get("/publish", auth, appCtrl.getPublish);
+router.post("/publish", auth, appCtrl.publish);
+router.post("/publish/comment", auth, appCtrl.comment);
 
 module.exports = router;

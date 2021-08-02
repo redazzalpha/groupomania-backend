@@ -39,7 +39,7 @@ const services = {
     generateTkn: result => {
         const token = jwt.sign(
             {
-                id: result.id,
+                userId: result.userId,
                 pseudo: result.pseudo,
                 email: result.email,
                 img: result.img,

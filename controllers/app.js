@@ -17,7 +17,7 @@ exports.publish = (req, res) => {
     if (services.checkPublication(req.body.publication)) {
 
         const decoded = req.decoded;
-        const userId = decoded.id;
+        const userId = decoded.userId;
         const pseudo = decoded.pseudo;
         const img = decoded.img;
         const text = req.body.publication;
@@ -31,7 +31,6 @@ exports.publish = (req, res) => {
     else return res.status(401).json({ error: { message: "Publication is empty", code: "ER_EMP_PUB" } });
 };
 exports.getPublish = (req, res) => {
-    // get publications
     mysql.query(`select * from publication`, (error, results) => {
         if (error)
             return res.status(500).json({ error });
@@ -40,15 +39,22 @@ exports.getPublish = (req, res) => {
 };
 exports.comment = (req, res) => {
 
+    const userId = req.decoded.userId;
     const pubId = req.body.pubId;
-    const id = req.decoded.id;
     const text = req.body.text;
 
-    mysql.query(`insert into comment (id, pubId, text) values (${pubId}, ${id}, "${text}")`, (error, results) => {
+    mysql.query(`insert into comment (userId, pubId, text) values (${userId}, ${pubId}, "${text}")`, (error) => {
+        if (error)
+            return res.status(500).json({ error });
+        res.status(201).json({ message: "Comment sent successfully", code: "SCS_PST_CMT"});
+    });
+
+};
+exports.getComment = (req, res) => {
+
+    mysql.query(`select * from comment`, (error, results) => {
         if (error)
             return res.status(500).json({ error });
         res.status(200).json({ results });
     });
-
-    res.status(200).json({ message: "Comment sent successfully", code: "SCS_PST_CMT"});
 };

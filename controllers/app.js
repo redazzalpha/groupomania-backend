@@ -5,7 +5,19 @@ exports.home = (req, res) => {
     res.status(200).json(req.decoded);
 };
 exports.profil = (req, res) => {
-    res.status(200).json({ message: "successfully in profil" });
+    res.status(200).json(req.decoded);
+};
+exports.img = (req, res) => {
+    res.status(200).json({message: "recieved img"});
+};
+exports.description = (req, res) => {
+    res.status(200).json(req.decoded);
+};
+exports.password = (req, res) => {
+    res.status(200).json(req.decoded);
+};
+exports.account = (req, res) => {
+    res.status(200).json(req.decoded);
 };
 exports.notification = (req, res) => {
     res.status(200).json({ message: "successfully in notification" });
@@ -40,10 +52,11 @@ exports.getPublish = (req, res) => {
 exports.comment = (req, res) => {
 
     const userId = req.decoded.userId;
+    const img = req.decoded.img;
     const pubId = req.body.pubId;
     const text = req.body.text;
 
-    mysql.query(`insert into comment (userId, pubId, text) values (${userId}, ${pubId}, "${text}")`, (error) => {
+    mysql.query(`insert into comment (userId, pubId, img, text) values (${userId}, ${pubId}, "${img}", "${text}")`, (error) => {
         if (error)
             return res.status(500).json({ error });
         res.status(201).json({ message: "Comment sent successfully", code: "SCS_PST_CMT"});

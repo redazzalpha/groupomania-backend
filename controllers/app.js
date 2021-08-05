@@ -7,11 +7,56 @@ exports.home = (req, res) => {
 exports.profil = (req, res) => {
     res.status(200).json(req.decoded);
 };
-exports.img = (req, res) => {
-    res.status(200).json({message: "recieved img"});
+exports.profilImg = (req, res) => {
+
+    let imgUrl = `${req.protocol}://${req.headers.host}/img/${req.file.filename}`;
+    let userData = req.decoded;
+    // update user publication and comment tables
+    // with user img input
+    mysql.query(`update user set img="${imgUrl}" where userId="${userData.userId}"`, error => {
+        if (error)
+            return res.status(500).json({ error });
+    });
+    mysql.query(`update publication set img="${imgUrl}" where userId="${userData.userId}"`, error => {
+        if (error)
+            return res.status(500).json({ error });
+    });
+    mysql.query(`update comment set img="${imgUrl}" where userId="${userData.userId}"`, error => {
+        if (error)
+            return res.status(500).json({ error });
+    });
+    // get user info and refresh token
+    mysql.query(`select * from user where email="${req.decoded.email}"`, (error, results) => {
+        if (error)
+            return res.status(500).json({ error });
+
+        //  update user info and refresh token
+        const result = results[0];
+        const data = {
+            token: services.generateTkn(result),
+            tokenRfsh: services.generateTknRfsh(result),
+            imgUrl
+        };
+        res.status(200).json({ data });
+    });
 };
 exports.description = (req, res) => {
-    res.status(200).json(req.decoded);
+    mysql.query(`update user set description="${req.body.description}" where userId="${req.decoded.userId}"`, error => {
+        if (error)
+            return res.status(500).json({ error });
+    });
+    mysql.query(`select * from user where email="${req.decoded.email}"`, (error, results) => {
+        if (error)
+            return res.status(500).json({ error });
+
+        //  update user info and refresh token
+        const result = results[0];
+        const data = {
+            token: services.generateTkn(result),
+            tokenRfsh: services.generateTknRfsh(result),
+        };
+        res.status(200).json({ data });
+    });
 };
 exports.password = (req, res) => {
     res.status(200).json(req.decoded);
@@ -34,7 +79,7 @@ exports.publish = (req, res) => {
         const img = decoded.img;
         const text = req.body.publication;
 
-        mysql.query(`insert into publication (userId, pseudo, img, text, postLike, postDislike) values ("${userId}", "${pseudo}", "${img}", "${text}", 0, 0)`, (error) => {
+        mysql.query(`insert into publication (userId, pseudo, img, text, time, postLike, postDislike) values ("${userId}", "${pseudo}", "${img}", "${text}", now(), 0, 0)`, (error) => {
             if (error)
                 return res.status(500).json({ error });
             res.status(201).json({ message: "Publication successfully sent", code: "SCS_PBSH_PUB" });
@@ -52,11 +97,12 @@ exports.getPublish = (req, res) => {
 exports.comment = (req, res) => {
 
     const userId = req.decoded.userId;
+    const pseudo = req.decoded.pseudo;
     const img = req.decoded.img;
     const pubId = req.body.pubId;
     const text = req.body.text;
 
-    mysql.query(`insert into comment (userId, pubId, img, text) values (${userId}, ${pubId}, "${img}", "${text}")`, (error) => {
+    mysql.query(`insert into comment (userId, pubId, pseudo, img, text, time) values (${userId}, ${pubId}, "${pseudo}", "${img}", "${text}", now())`, (error) => {
         if (error)
             return res.status(500).json({ error });
         res.status(201).json({ message: "Comment sent successfully", code: "SCS_PST_CMT"});

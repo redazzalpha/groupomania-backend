@@ -11,6 +11,7 @@ ER_EMP_PUB: error empty publication
 SCS_PBSH_PUB: succes publish publication
 SCS_PST_CMT: succes post comment 
 SCS_IN_REG: success in register
+SCS_USR_PROF: success change user profil image
 
 
 

@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.get("/home", auth, appCtrl.home);
 router.get("/profil", auth, appCtrl.profil);
-router.post("/profil/img", auth, multer, appCtrl.img);
+router.post("/profil/img", auth, multer, appCtrl.profilImg);
 router.post("/profil/description", auth, appCtrl.description);
 router.post("/profil/password", auth, appCtrl.password);
 router.post("/profil/acccount", auth, appCtrl.account);

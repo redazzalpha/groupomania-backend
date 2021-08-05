@@ -10,7 +10,7 @@ const auth = (req, res, next) => {
             next();
         });
     }
-    else return res.status(400).json({error: { message: "token autentification failed", code: "ER_JWT_AUTH" }});
+    else return res.status(400).json({ error: { message: "token autentification failed", code: "ER_JWT_AUTH" } });
 };
 
 module.exports = auth;

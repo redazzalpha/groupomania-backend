@@ -10,32 +10,24 @@ exports.login = (req, res) => {
     
     // check user inputs
     if (services.checkEmail(email) && services.checkPasswd(password)) {
-        
         // get hash password from database 
         mysql.query(`select * from user where email="${email}"`, (error, results) => {
             if (error)
                 return res.status(500).json({ error });
-            
             // check if results contain value(s)
             if (results.length >= 1) {
-
                 const result = results[0];
-
                 // compare hash from database and request body password 
                 bcrypt.compare(password, result.password, (error, ready) => {
-
                     // if internal error set response statut to 500
                     if (error)
                         return res.status(500).json({ error });
-                    
                     // if password does not match with hash set response statut to 401 and returns invalid message
                     if (!ready)
                         return res.status(401).json({ error: { message: "Invalid password", code: "ER_INV_PASS" } });
-                    
                     //  send token
                     const data = {
                         token: services.generateTkn(result),
-                        tokenRfsh: services.generateTknRfsh(result),
                     };
                     res.status(200).json({ data });
                 });

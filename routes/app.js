@@ -1,20 +1,26 @@
 const express = require('express');
 const appCtrl = require('../controllers/app');
 const auth = require('../middlewares/auth');
+const tokenConfig = require('../middlewares/token');
 const multer = require('../middlewares/multer');
 const router = express.Router();
 
-router.get("/home", auth, appCtrl.home);
-router.get("/profil", auth, appCtrl.profil);
-router.post("/profil/img", auth, multer, appCtrl.profilImg);
-router.post("/profil/description", auth, appCtrl.description);
-router.post("/profil/password", auth, appCtrl.password);
-router.post("/profil/acccount", auth, appCtrl.account);
-router.get("/notification", auth, appCtrl.notification);
-router.get("/publish", auth, appCtrl.getPublish);
-router.post("/publish", auth, appCtrl.publish);  
-router.get("/publish/comment", auth, appCtrl.getComment);
-router.post("/publish/comment", auth, appCtrl.comment);
-router.get("/team", auth, appCtrl.team);
+router.get("/home", auth, tokenConfig, appCtrl.accessHome);
+router.get("/profil", auth, tokenConfig, appCtrl.accessProfil);
+router.put("/profil/img", auth, tokenConfig, multer, appCtrl.uptProfImg);
+router.put("/profil/description", auth, tokenConfig, appCtrl.uptProfDesc);
+router.put("/profil/password", auth, tokenConfig, appCtrl.uptProfPasswd);
+router.post("/profil/delete", auth, tokenConfig, appCtrl.delAccount);
+router.post("/publish", auth, tokenConfig, appCtrl.publish);  
+router.get("/publish", auth, tokenConfig, appCtrl.getPublish);
+router.post("/publish/like", auth, tokenConfig, appCtrl.like);
+router.post("/publish/dislike", auth, tokenConfig, appCtrl.dislike);
+router.post("/publish/delete", auth, tokenConfig, appCtrl.delPublication);  
+router.post("/publish/comment", auth, tokenConfig, appCtrl.comment);
+router.get("/publish/comment", auth, tokenConfig, appCtrl.getComment);
+router.post("/publish/comment/delete", auth, tokenConfig, appCtrl.delComment);
+router.get("/notification", auth, tokenConfig, appCtrl.accessNotif);
+router.get("/team", auth, tokenConfig, appCtrl.accessTeam);
+router.get("/autolog", auth, tokenConfig, appCtrl.autoLog);
 
 module.exports = router;

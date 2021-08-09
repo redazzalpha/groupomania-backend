@@ -5,15 +5,20 @@ ER_UNK_USER: error unknown user
 ER_CHK_EMP: error check email/password
 ER_BAD_PEP: error bad pseudo email password
 ER_EMP_PUB: error empty publication
+ER_EMP_COM: error empty comment
+ER_BEA_TKN: error verify token: Bearer not found
 
 # SUCCESS
 
 SCS_PBSH_PUB: succes publish publication
 SCS_PST_CMT: succes post comment 
 SCS_IN_REG: success in register
-SCS_USR_PROF: success change user profil image
-
-
-
+SCS_DEL_COM: success delete comment
+SCS_DEL_PUB : success delete publication
+SCS_ACC_HOM: success home authorized access
+SCS_ACC_PROF: success profil authorized access
+SCS_UPT_PSW: success update password
+SCS_DEL_ACC: success delete account
+SCS_AUTH_ACC: success authorized access
 
 //SCS_GET_PUB: success get publications

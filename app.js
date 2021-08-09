@@ -3,6 +3,7 @@ const path = require('path');
 const app = express();
 const userRoutes = require('./routes/user');
 const appRoutes = require('./routes/app');
+const auth = require('./middlewares/auth');
 
 // body parser
 app.use(express.urlencoded({ extended: true }));

@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { DateTime } = require("luxon");
 require("dotenv").config();
 
 const services = {
@@ -33,8 +34,11 @@ const services = {
         }
         return !ok;
     },
-    checkPublication: publication => {
-        return !/^\s+$/gi.test(publication);
+    isNotEmpty: text => {
+        return !/^\s+$/gi.test(text);
+    },
+    generateTknRfsh: result => {
+        return jwt.sign({ userId: result.userId }, process.env.SEC_SES_REFRESH, { expiresIn: process.env.SEC_SES_REFRESH_LIFE });
     },
     generateTkn: result => {
         const token = jwt.sign(
@@ -46,15 +50,18 @@ const services = {
                 img: result.img,
                 password: result.password,
                 rights: result.rights,
+                tokenRfsh: services.generateTknRfsh(result),
             },
             process.env.SEC_SES,
             { expiresIn: process.env.SEC_SES_LIFE }
         );
         return token;
     },
-    generateTknRfsh: result => {
-        return jwt.sign({ id: result.id }, process.env.SEC_SES_REFRESH, { expiresIn: process.env.SEC_SES_REFRESH_LIFE });
-    },
+    now() {
+
+        const second = DateTime.now().c.second;
+        return `${DateTime.now().setLocale('FR').toLocaleString(DateTime.DATETIME_MED)}:${second}`.replace(",", " à");
+    }
 };
 
 module.exports = services;

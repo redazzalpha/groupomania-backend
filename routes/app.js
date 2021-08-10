@@ -15,6 +15,8 @@ router.post("/publish", auth, tokenConfig, appCtrl.publish);
 router.get("/publish", auth, tokenConfig, appCtrl.getPublish);
 router.post("/publish/like", auth, tokenConfig, appCtrl.like);
 router.post("/publish/dislike", auth, tokenConfig, appCtrl.dislike);
+router.post("/publish/unlike", auth, tokenConfig, appCtrl.unlike);
+router.post("/publish/undislike", auth, tokenConfig, appCtrl.undislike);
 router.post("/publish/delete", auth, tokenConfig, appCtrl.delPublication);  
 router.post("/publish/comment", auth, tokenConfig, appCtrl.comment);
 router.get("/publish/comment", auth, tokenConfig, appCtrl.getComment);

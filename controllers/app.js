@@ -146,11 +146,11 @@ exports.autoLog = (req, res) => {
 };
 exports.like = (req, res) => {
 
-    const getLikeQuery = `select postLike from publication where pubId=${req.body.pubId}`;
+    const getLikeQuery = `select postLike from publication where pubId=${req.body.data.pubId}`;
     mysqlCmd(getLikeQuery)
         .then(
             results => {
-                const updateLikeQuery = `update publication set postLike=${++results[0].postLike} where pubId=${req.body.pubId}`;
+                const updateLikeQuery = `update publication set postLike=${++results[0].postLike}, userIdLike="${JSON.stringify(req.body.data.userIdLike)}" where pubId=${req.body.data.pubId}`;
                     mysqlCmd(updateLikeQuery)
                         .then(
                             (/*success*/) => res.status(200).json({ postLike: results[0].postLike })
@@ -164,12 +164,51 @@ exports.like = (req, res) => {
             (error) => res.status(400).json({ error })
         );
 };
-exports.dislike = (req, res) => {
-    const getDislikeQuery = `select postDislike from publication where pubId=${req.body.pubId}`;
+exports.dislike = (req, res) => {    
+    const getDislikeQuery = `select postDislike from publication where pubId=${req.body.data.pubId}`;
     mysqlCmd(getDislikeQuery)
         .then(
             results => {
-                const updateDislikeQuery = `update publication set postDislike=${++results[0].postDislike} where pubId=${req.body.pubId}`;
+                const updateDislikeQuery = `update publication set postDislike=${++results[0].postDislike}, userIdDislike="${JSON.stringify(req.body.data.userIdDislike)}"where pubId=${req.body.data.pubId}`;
+                    mysqlCmd(updateDislikeQuery)
+                        .then(
+                            (/*success*/) => res.status(200).json({ postDislike: results[0].postDislike })
+                        )
+                        .catch(
+                            (error) => res.status(400).json({ error })
+                        );
+                }
+            )
+        .catch(
+            (error) => res.status(400).json({ error })
+        );
+};
+exports.unlike = (req, res) => {
+
+    const getLikeQuery = `select postLike from publication where pubId=${req.body.data.pubId}`;
+    mysqlCmd(getLikeQuery)
+        .then(
+            results => {
+                const updateLikeQuery = `update publication set postLike=${--results[0].postLike}, userIdLike="${JSON.stringify(req.body.data.userIdLike)}" where pubId=${req.body.data.pubId}`;
+                    mysqlCmd(updateLikeQuery)
+                        .then(
+                            (/*success*/) => res.status(200).json({ postLike: results[0].postLike })
+                        )
+                        .catch(
+                            (error) => res.status(400).json({ error })
+                        );
+                }
+            )
+        .catch(
+            (error) => res.status(400).json({ error })
+        );
+};
+exports.undislike = (req, res) => {
+    const getDislikeQuery = `select postDislike from publication where pubId=${req.body.data.pubId}`;
+    mysqlCmd(getDislikeQuery)
+        .then(
+            results => {
+                const updateDislikeQuery = `update publication set postDislike=${--results[0].postDislike}, userIdDislike="${JSON.stringify(req.body.data.userIdDislike)}" where pubId=${req.body.data.pubId}`;
                     mysqlCmd(updateDislikeQuery)
                         .then(
                             (/*success*/) => res.status(200).json({ postDislike: results[0].postDislike })

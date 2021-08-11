@@ -48,6 +48,7 @@ const services = {
                 email: result.email,
                 description: result.description,
                 img: result.img,
+                notif: result.notif,
                 password: result.password,
                 rights: result.rights,
                 tokenRfsh: services.generateTknRfsh(result),

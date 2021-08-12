@@ -101,31 +101,19 @@ exports.delPublication = (req, res) => {
 
     const delComQuery = `delete from comment where pubId=${req.body.pubId}`;
     const delPubQuery = `delete from publication where pubId=${req.body.pubId}`;
-    const getNotifQuery = `select notif from user where userId=${req.decoded.userId}`;
+    const delNotifQuery = `delete from notif where pubId=${req.body.pubId}`; 
 
-    mysqlCmd(getNotifQuery)
-        .then(results => {
-            let result = results[0];
-            result.notif = JSON.parse(result.notif);
-            if (result.notif) {
-                result.notif = result.notif.filter(item => {
-                    return item.where != req.body.pubId;
-                });
-            }
-            const updateNotifQuery = `update user set notif="${JSON.stringify(result.notif)}" where userId=${req.decoded.userId}`;
-            mysqlCmd(updateNotifQuery)
+    mysqlCmd(delPubQuery)
+        .then(() => {
+            mysqlCmd(delComQuery)
                 .then(() => {
-                    mysqlCmd(delComQuery)
-                        .then(() => {
-                            mysqlCmd(delPubQuery)
-                            .then( () => res.status(200).json({ message: "Publication successfully deleted", code: "SCS_DEL_PUB" }) )
-                            .catch( error => res.status(500).json({ error, message: "del pub" }) );
-                        })
-                        .catch(error => { return res.status(500).json({ error, message: "del com" }); });                    
+                    mysqlCmd(delNotifQuery)
+                        .then( () => res.status(200).json({ message: "Publication successfully deleted", code: "SCS_DEL_PUB" }) )
+                        .catch( error => res.status(500).json({ error }) );
                 })
-                .catch(error => res.status(500).json({ error }) );
+                .catch( error => res.status(500).json({ error }) );
         })
-        .catch(error => res.status(500).json({ error }) );
+        .catch(error => { return res.status(500).json({ error }); });                    
 };
 exports.comment = (req, res) => {
 
@@ -143,45 +131,30 @@ exports.comment = (req, res) => {
         const userId = req.decoded.userId;
         const pseudo = req.decoded.pseudo;
         const img = req.decoded.img;
-        const pubId = req.body.pubId;
         const text = req.body.comment;
-        const notif = {
-            from: userId,
-            where: pubId,
-            pseudo,
-            img,
-        };
+        const pubUserId = req.body.userId;
+        const pubId = req.body.pubId;
+        const time = services.now();
 
-        const insertCommentQuery = `insert into comment (userId, pubId, pseudo, img, text, time) values (${userId}, ${pubId}, "${pseudo}", "${img}", "${text}", "${services.now()}")`;
-        const getUserIdQuery = `select userId from publication where pubId=${pubId} `;
-        let author = 0;
+        const insertCommentQuery = `insert into comment (userId, pubId, pseudo, img, text, time) values (${userId}, ${pubId}, "${pseudo}", "${img}", "${text}", "${time}")`;
+        const getComIdQuery = `select last_insert_id() from comment`;
 
         mysqlCmd(insertCommentQuery)
             .then(() => {
-                mysqlCmd(getUserIdQuery)
+                mysqlCmd(getComIdQuery)
                     .then(results => {
-
-                        author = results[0].userId;
-                        const getNotifQuery = `select notif from user where userId=${author}`;
-                        mysqlCmd(getNotifQuery)
-                            .then( results => {
-                                const user = results[0];
-                                user.notif = JSON.parse(user.notif);
-                                if (!user.notif)
-                                    user.notif = [];
-                                user.notif.push(notif);
-                                user.notif = JSON.stringify(user.notif);                            
-                                const updateNotifQuery = `update user set notif = '${user.notif}' where userId=${author}`;
-                                mysqlCmd(updateNotifQuery)
-                                    .then( () => res.status(200).json({ message: "success" }) )
-                                    .catch(error => res.status(500).json({ error }));
-                            })
-                            .catch(error => res.status(500).json({ error }));                        
+                        if (userId != pubUserId) {
+                            const comId = results[0]["last_insert_id()"];
+                            const insertNotifQuery = `insert into notif (userId, fromId, pubId, comId, pseudo, img, text, time, state) values (${pubUserId}, ${userId}, ${pubId}, ${comId}, "${pseudo}", "${img}", "${text}", "${time}", "unread")`;
+                            mysqlCmd(insertNotifQuery)
+                                .then(() => res.status(200).json({ message: "success" }))
+                                .catch(error => res.status(500).json({ error }));
+                        }
+                        else res.status(200).json({ message: "success" });
                     })
-                    .catch(error => res.status(500).json({ error }) );
+                    .catch();
             })
             .catch(error => res.status(500).json({ error }));
-        
     }
     else return res.status(401).json({ error: { message: "Cooment is empty", code: "ER_EMP_COM" } });
 };
@@ -195,31 +168,42 @@ exports.getComment = (req, res) => {
 };
 exports.delComment = (req, res) => {
 
-    const getNotifQuery = `select notif from user where userId=${req.decoded.userId}`;
     const delCommentQuery = `delete from comment where comId=${req.body.comId}`;
-    mysqlCmd(getNotifQuery)
-        .then(results => {
-            let result = results[0];
-            result.notif = JSON.parse(result.notif);
-            if (result.notif) {
-                result.notif = result.notif.filter(item => {
-                    return item.where != req.body.pubId;
-                });
-            }
-            result.notif = JSON.stringify(result.notif);
-            const updateNotifQuery = `update user set notif="${result.notif}" where userId=${req.decoded.userId}`;
-            mysqlCmd(updateNotifQuery)
-                .then(() => {
-                    mysqlCmd(delCommentQuery)
-                        .then(() => res.status(200).json({ message: "Comment successfully deleted", code: "SCS_DEL_COM" }))
-                        .catch(error => res.status(500).json({ error }) );
-                })
-                .catch();
+    const delNotifQuery = `delete from notif where comId=${req.body.comId}`;
+
+    mysqlCmd(delCommentQuery)
+        .then(() => {
+            mysqlCmd(delNotifQuery)
+                .then(() => res.status(200).json({ message: "Comment successfully deleted", code: "SCS_DEL_COM" }) )
+                .catch(error => res.status(500).json({ error }) );
         })
-        .catch(error => res.status(500).json({ error }) );    
+        .catch(error => res.status(500).json({ error }) );
 }
 exports.accessNotif = (req, res) => {
     res.status(200).json({ message: "successfully in notification" });
+};
+exports.getNotif = (req, res) => {
+
+    const getNotifQuery = `select * from notif where userId=${req.decoded.userId} ORDER BY time DESC`;
+    mysqlCmd(getNotifQuery)
+        .then(results => res.status(200).json({ results }) )
+        .catch( error => res.status(500).json({ error }));
+    
+};
+exports.readNotif = (req, res) => {
+
+    const updateNotifQuery = `update notif set state="read" where notifId=${req.body.notifId}`;
+    mysqlCmd(updateNotifQuery)
+        .then((/*results*/) => res.status(200).json({ message: "notification read", code: "SCS_REA_NOT" }) )
+        .catch( error => res.status(500).json({ error }));
+};
+exports.delNotif = (req, res) => {
+
+    const delNotifQuery = `delete from notif where notifId=${req.body.notifId}`;
+    mysqlCmd(delNotifQuery)
+        .then(results => res.status(200).json({ results }) )
+        .catch( error => res.status(500).json({ error }));
+    
 };
 exports.accessTeam = (req, res) => {
     res.status(200).json({ message: "successfully in team" });

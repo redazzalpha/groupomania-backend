@@ -20,5 +20,6 @@ SCS_ACC_PROF: success profil authorized access
 SCS_UPT_PSW: success update password
 SCS_DEL_ACC: success delete account
 SCS_AUTH_ACC: success authorized access
+SCS_REA_NOT: success read notif
 
 //SCS_GET_PUB: success get publications

@@ -22,6 +22,9 @@ router.post("/publish/comment", auth, tokenConfig, appCtrl.comment);
 router.get("/publish/comment", auth, tokenConfig, appCtrl.getComment);
 router.post("/publish/comment/delete", auth, tokenConfig, appCtrl.delComment);
 router.get("/notification", auth, tokenConfig, appCtrl.accessNotif);
+router.get("/notification/notifs", auth, tokenConfig, appCtrl.getNotif);
+router.post("/notification/delete", auth, tokenConfig, appCtrl.delNotif);
+router.post("/notification/read", auth, tokenConfig, appCtrl.readNotif);
 router.get("/team", auth, tokenConfig, appCtrl.accessTeam);
 router.get("/autolog", auth, tokenConfig, appCtrl.autoLog);
 

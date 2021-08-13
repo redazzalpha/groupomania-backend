@@ -54,20 +54,24 @@ exports.uptProfImg = (req, res) => {
         .catch( error => res.status(500).json({ error })) ;
 };
 exports.uptProfDesc = (req, res) => {
-    const updateUserQuery = `update user set description="${req.body.description}" where userId="${req.decoded.userId}"`;
-    const getUserQuery = `select * from user where email="${req.decoded.email}"`;
-    mysqlCmd(updateUserQuery)
-        .then(() => {
-            mysqlCmd(getUserQuery)
-                .then(results => {
-                    const data = {
-                        token: services.generateTkn(results[0]),
-                    };
-                    res.status(200).json({ data });                
-                })
-                .catch(error => res.status(500).json({ error }) );
-        })
-        .catch( error => res.status(500).json({ error }) );
+    // Empty string is authorized 
+    // to delete previous description
+    if (req.body.description.length <= 255) {
+        const updateUserQuery = `update user set description="${req.body.description}" where userId="${req.decoded.userId}"`;
+        const getUserQuery = `select * from user where email="${req.decoded.email}"`;
+        mysqlCmd(updateUserQuery)
+            .then(() => {
+                mysqlCmd(getUserQuery)
+                    .then(results => {
+                        const data = {
+                            token: services.generateTkn(results[0]),
+                        };
+                        res.status(200).json({ data });                
+                    })
+                    .catch(error => res.status(500).json({ error }) );
+            })
+            .catch( error => res.status(500).json({ error }) );
+    }
 };
 exports.uptProfPasswd = (req, res) => {
     res.status(200).json({ message: "Password updated succesfully", code: "SCS_UPT_PSW" });
@@ -117,17 +121,7 @@ exports.delPublication = (req, res) => {
 };
 exports.comment = (req, res) => {
 
-    /**
-     * This function is used to create Comment
-     * To create comment need to insert comment into database
-     * then get userId to get notif object from user
-     * get notif as map object
-     * the first key is the userId 
-     * the second key is the pubId 
-     * then replace values and reinject map into database
-     * 
-     */
-    if (services.isNotEmpty(req.body.comment)) {
+    if (services.isNotEmpty(req.body.comment) && req.body.comment.length <= 255) {
         const userId = req.decoded.userId;
         const pseudo = req.decoded.pseudo;
         const img = req.decoded.img;

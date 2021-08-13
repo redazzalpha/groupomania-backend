@@ -35,7 +35,7 @@ const services = {
         return !ok;
     },
     isNotEmpty: text => {
-        return !/^\s+$/gi.test(text);
+        return !/^\s*$/gi.test(text);
     },
     generateTknRfsh: result => {
         return jwt.sign({ userId: result.userId }, process.env.SEC_SES_REFRESH, { expiresIn: process.env.SEC_SES_REFRESH_LIFE });

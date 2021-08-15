@@ -81,12 +81,12 @@ exports.delAccount = (req, res) => {
 };
 exports.publish = (req, res) => {
     if (services.isNotEmpty(req.body.publication)) {
-        const decoded = req.decoded;
-        const userId = decoded.userId;
-        const pseudo = decoded.pseudo;
-        const img = decoded.img;
+        const authorId = req.decoded.userId;
         const text = req.body.publication;
-        mysql.query(`insert into publication (userId, pseudo, img, text, time, postLike, postDislike) values ("${userId}", "${pseudo}", "${img}", "${text}", "${services.now()}", 0, 0)`, (error) => {
+
+        console.log(`authorId: ${authorId}`)
+        console.log(`text: ${text}`)
+        mysql.query(`insert into publication (authorId, text, time, postLike, postDislike) values ("${authorId}", "${text}", "${services.now()}", 0, 0)`, (error) => {
             if (error)
                 return res.status(500).json({ error });
             res.status(201).json({ message: "Publication successfully sent", code: "SCS_PBSH_PUB" });
@@ -94,8 +94,8 @@ exports.publish = (req, res) => {
     }
     else return res.status(401).json({ error: { message: "Publication is empty", code: "ER_EMP_PUB" } });
 };
-exports.getPublish = (req, res) => {
-    mysql.query(`select * from publication ORDER BY time DESC`, (error, results) => {
+exports.getPublication = (req, res) => {
+    mysql.query(`select * from publication left join user on authorId=userId ORDER BY time DESC`, (error, results) => {
         if (error)
             return res.status(500).json({ error });
         res.status(200).json({ results });
@@ -103,43 +103,30 @@ exports.getPublish = (req, res) => {
 };
 exports.delPublication = (req, res) => {
 
-    const delComQuery = `delete from comment where pubId=${req.body.pubId}`;
-    const delPubQuery = `delete from publication where pubId=${req.body.pubId}`;
-    const delNotifQuery = `delete from notif where pubId=${req.body.pubId}`; 
-
+    const delPubQuery = `delete publication, comment, notif from publication left join comment on pubId = parentId  left join notif on comId = fromId where pubId = ${req.body.pubId}`;
     mysqlCmd(delPubQuery)
-        .then(() => {
-            mysqlCmd(delComQuery)
-                .then(() => {
-                    mysqlCmd(delNotifQuery)
-                        .then( () => res.status(200).json({ message: "Publication successfully deleted", code: "SCS_DEL_PUB" }) )
-                        .catch( error => res.status(500).json({ error }) );
-                })
-                .catch( error => res.status(500).json({ error }) );
-        })
+        .then(() => res.status(200).json({ message: "Publication successfully deleted", code: "SCS_DEL_PUB" }))
         .catch(error => { return res.status(500).json({ error }); });                    
 };
 exports.comment = (req, res) => {
 
-    if (services.isNotEmpty(req.body.comment) && req.body.comment.length <= 255) {
-        const userId = req.decoded.userId;
-        const pseudo = req.decoded.pseudo;
-        const img = req.decoded.img;
-        const text = req.body.comment;
-        const pubUserId = req.body.userId;
-        const pubId = req.body.pubId;
-        const time = services.now();
+    if (services.isNotEmpty(req.body.comment) && req.body.comText.length <= 255) {
+        const writerId = req.decoded.userId;
+        const parentId = req.body.parentId;
+        const comText = req.body.comText;
+        const whereId = req.body.authorId;
+        const comTime = services.now();
 
-        const insertCommentQuery = `insert into comment (userId, pubId, pseudo, img, text, time) values (${userId}, ${pubId}, "${pseudo}", "${img}", "${text}", "${time}")`;
+        const insertCommentQuery = `insert into comment (writerId, parentId, comText, comTime) values (${writerId}, ${parentId}, "${comText}", "${comTime}")`;
         const getComIdQuery = `select last_insert_id() from comment`;
 
         mysqlCmd(insertCommentQuery)
             .then(() => {
                 mysqlCmd(getComIdQuery)
                     .then(results => {
-                        if (userId != pubUserId) {
-                            const comId = results[0]["last_insert_id()"];
-                            const insertNotifQuery = `insert into notif (userId, fromId, pubId, comId, pseudo, img, text, time, state) values (${pubUserId}, ${userId}, ${pubId}, ${comId}, "${pseudo}", "${img}", "${text}", "${time}", "unread")`;
+                        if (writerId != whereId) {
+                            const fromId = results[0]["last_insert_id()"];
+                            const insertNotifQuery = `insert into notif (fromId, whereId, state) values (${fromId}, ${whereId}, "unread")`;
                             mysqlCmd(insertNotifQuery)
                                 .then(() => res.status(200).json({ message: "success" }))
                                 .catch(error => res.status(500).json({ error }));
@@ -154,7 +141,7 @@ exports.comment = (req, res) => {
 };
 exports.getComment = (req, res) => {
 
-    mysql.query(`select * from comment ORDER BY time DESC`, (error, results) => {
+    mysql.query(`select * from comment left join publication on parentId=pubId left join user on writerId=userId order by comTime desc`, (error, results) => {
         if (error)
             return res.status(500).json({ error });
         res.status(200).json({ results });
@@ -162,15 +149,9 @@ exports.getComment = (req, res) => {
 };
 exports.delComment = (req, res) => {
 
-    const delCommentQuery = `delete from comment where comId=${req.body.comId}`;
-    const delNotifQuery = `delete from notif where comId=${req.body.comId}`;
-
-    mysqlCmd(delCommentQuery)
-        .then(() => {
-            mysqlCmd(delNotifQuery)
-                .then(() => res.status(200).json({ message: "Comment successfully deleted", code: "SCS_DEL_COM" }) )
-                .catch(error => res.status(500).json({ error }) );
-        })
+    const delComQuery = `delete comment, notif from comment left join notif on comId = fromId where comId = ${req.body.comId}`;
+    mysqlCmd(delComQuery)
+        .then(() => res.status(200).json({ message: "Comment successfully deleted", code: "SCS_DEL_COM" }) )
         .catch(error => res.status(500).json({ error }) );
 }
 exports.accessNotif = (req, res) => {
@@ -178,7 +159,7 @@ exports.accessNotif = (req, res) => {
 };
 exports.getNotif = (req, res) => {
 
-    const getNotifQuery = `select * from notif where userId=${req.decoded.userId} ORDER BY time DESC`;
+    const getNotifQuery = `select * from notif left join comment on fromId=comId left join user on writerId=userId order by comTime desc`;
     mysqlCmd(getNotifQuery)
         .then(results => res.status(200).json({ results }) )
         .catch( error => res.status(500).json({ error }));

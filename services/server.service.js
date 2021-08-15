@@ -38,7 +38,7 @@ const services = {
         return !/^\s*$/gi.test(text);
     },
     generateTknRfsh: result => {
-        return jwt.sign({ userId: result.userId }, process.env.SEC_SES_REFRESH, { expiresIn: process.env.SEC_SES_REFRESH_LIFE });
+        return jwt.sign({ id: result.id }, process.env.SEC_SES_REFRESH, { expiresIn: process.env.SEC_SES_REFRESH_LIFE });
     },
     generateTkn: result => {
         const token = jwt.sign(

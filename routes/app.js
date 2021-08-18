@@ -11,7 +11,7 @@ router.put("/profil/description", auth, appCtrl.uptProfDesc);
 router.put("/profil/password", auth, appCtrl.uptProfPasswd);
 router.post("/profil/delete", auth, appCtrl.delAccount);
 router.post("/publish", auth, appCtrl.publish);  
-router.get("/publish", auth, appCtrl.getPublication);
+router.get("/publish", auth, appCtrl.getPubs);
 router.post("/publish/like", auth, appCtrl.like);
 router.post("/publish/dislike", auth, appCtrl.dislike);
 router.post("/publish/unlike", auth, appCtrl.unlike);

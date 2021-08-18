@@ -23,31 +23,20 @@ exports.uptProfImg = (req, res) => {
     const imgUrl = `${req.protocol}://${req.headers.host}/img/${req.file.filename}`;
     const userData = req.decoded;
     const updateUserQuery = `update user set img="${imgUrl}" where userId="${userData.userId}"`;
-    const updatePublicationQuery = `update publication set img="${imgUrl}" where userId="${userData.userId}"`;
-    const updateCommentQuery = `update comment set img="${imgUrl}" where userId="${userData.userId}"`;
     const getUserQuery = `select * from user where email="${req.decoded.email}"`;
 
     // update user publication and comment tables
     // with user img input
     mysqlCmd(updateUserQuery)
         .then(() => {
-            mysqlCmd(updatePublicationQuery)
-                .then(() => {
-                    mysqlCmd(updateCommentQuery)
-                        .then( () => {
-                            // get user info and refresh token
-                            mysqlCmd(getUserQuery)
-                                .then(results => {
-                                    const data = {
-                                        token: services.generateTkn(results[0]),
-                                        imgUrl
-                                    };
-                                    res.status(200).json({ data });                                            
-                                })
-                                .catch( error => res.status(500).json({ error }) );
-                        })
-                        .catch( error => res.status(500).json({ error }) );
-
+            // get user info and refresh token
+            mysqlCmd(getUserQuery)
+                .then(results => {
+                    const data = {
+                        token: services.generateTkn(results[0]),
+                        imgUrl
+                    };
+                    res.status(200).json({ data });                                            
                 })
                 .catch( error => res.status(500).json({ error }) );
         })
@@ -83,10 +72,7 @@ exports.publish = (req, res) => {
     if (services.isNotEmpty(req.body.publication)) {
         const authorId = req.decoded.userId;
         const text = req.body.publication;
-
-        console.log(`authorId: ${authorId}`)
-        console.log(`text: ${text}`)
-        mysql.query(`insert into publication (authorId, text, time, postLike, postDislike) values ("${authorId}", "${text}", "${services.now()}", 0, 0)`, (error) => {
+        mysql.query(`insert into publication (authorId, text, time, postLike, postDislike) values ('${authorId}', BINARY '${text}', '${services.now()}', 0, 0)`, (error) => {
             if (error)
                 return res.status(500).json({ error });
             res.status(201).json({ message: "Publication successfully sent", code: "SCS_PBSH_PUB" });
@@ -94,10 +80,12 @@ exports.publish = (req, res) => {
     }
     else return res.status(401).json({ error: { message: "Publication is empty", code: "ER_EMP_PUB" } });
 };
-exports.getPublication = (req, res) => {
+exports.getPubs = (req, res) => {
     mysql.query(`select * from publication left join user on authorId=userId ORDER BY time DESC`, (error, results) => {
         if (error)
             return res.status(500).json({ error });
+        for (let item of results)
+            item.text = Buffer.from(item.text).toString();
         res.status(200).json({ results });
     });
 };
@@ -231,4 +219,5 @@ exports.undislike = (req, res) => {
         })
         .catch( error => res.status(400).json({ error }) );
 };
+
 

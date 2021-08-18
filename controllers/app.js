@@ -147,7 +147,6 @@ exports.accessNotif = (req, res) => {
 };
 exports.getNotif = (req, res) => {
 
-    //const getNotifQuery = `select * from notif left join comment on fromId=comId left join user on writerId=userId order by comTime desc`;
     const getNotifQuery = `select * from notif left join comment on fromId=comId left join user on writerId=userId left join publication on parentId = pubId order by comTime desc`;
     mysqlCmd(getNotifQuery)
         .then(results => {

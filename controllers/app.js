@@ -155,7 +155,6 @@ exports.getNotif = (req, res) => {
             res.status(200).json({ results });
         })
         .catch( error => res.status(500).json({ error }));
-    
 };
 exports.readNotif = (req, res) => {
 
@@ -223,5 +222,14 @@ exports.undislike = (req, res) => {
         })
         .catch( error => res.status(400).json({ error }) );
 };
-
+exports.getUsers = (req, res) => {
+    const getUsersQuery = `select * from user`;
+    mysqlCmd(getUsersQuery)
+        .then(results => {
+            res.status(200).json({ results });
+        })
+        .catch(error => {
+            res.status(500).json({ error });
+        });
+};
 

@@ -25,6 +25,7 @@ router.get("/notification/notifs", auth, appCtrl.getNotif);
 router.post("/notification/delete", auth, appCtrl.delNotif);
 router.post("/notification/read", auth, appCtrl.readNotif);
 router.get("/team", auth, appCtrl.accessTeam);
+router.get("/team/users", auth, appCtrl.getUsers);
 router.get("/autolog", auth, appCtrl.autoLog);
 
 module.exports = router;

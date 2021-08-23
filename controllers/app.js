@@ -1,4 +1,5 @@
 const mysql = require("../mysql");
+const bcrypt = require("bcrypt");
 const services = require("../services/server.service");
 
 function mysqlCmd(query) {
@@ -231,5 +232,40 @@ exports.getUsers = (req, res) => {
         .catch(error => {
             res.status(500).json({ error });
         });
+};
+exports.modifyPassword = (req, res) => {
+    const getHashPasswdQuery = `select password from user where userId=${req.decoded.userId} `;
+    mysqlCmd(getHashPasswdQuery)
+        .then(results => {
+            const hash = results[0].password;
+            bcrypt.compare(req.params.old, hash, (error, ready) => {
+                if (error)
+                    return res.status(500).json({ error });
+                if (!ready)
+                    return res.status(401).json({ message: "Password does not match", code: "ER_CHK_PASS" });
+                // generate salt for password encryption
+                bcrypt.genSalt(10, (error, salt) => {
+                    if (error)
+                        return res.status(500).json({ error });
+                    // generate hash from request  password
+                    bcrypt.hash(req.params.new, salt, (error, hash) => {
+                        if (error)
+                            return res.status(500).json({ error });
+                        const modifyPasswdQuery = `update user set password="${hash}" where userId=${req.decoded.userId}`;
+                        mysqlCmd(modifyPasswdQuery)
+                            .then( () => res.status(200).json({ message: "Password modified successfully", code: "SCS_MDF_PASS" }) )
+                            .catch( error => res.status(500).json({ error }) );
+                    });
+                });    
+            });
+        })
+        .catch(error => res.status(500).json({text: error }) );
+};
+exports.deleteProf = (req, res) => {
+    console.log(`req.params.id: ${req.params.id}`)
+    const delProfQuery = `delete user, publication, comment, notif from user left join publication on userId=authorId left join comment on userId=writerId left join notif on userId=whereId where userId=${req.params.id}`;
+    mysqlCmd(delProfQuery)
+        .then( () => res.status(200).json({ message: "Profil deleted successfully", code: "SCS_DEL_PROF" }) )
+        .catch( error => res.status(500).json({ error }));    
 };
 

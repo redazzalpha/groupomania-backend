@@ -27,5 +27,8 @@ router.post("/notification/read", auth, appCtrl.readNotif);
 router.get("/team", auth, appCtrl.accessTeam);
 router.get("/team/users", auth, appCtrl.getUsers);
 router.get("/autolog", auth, appCtrl.autoLog);
+router.patch("/password/:old&:new", auth, appCtrl.modifyPassword);
+router.delete("/profil/:id", auth, appCtrl.deleteProf);
+
 
 module.exports = router;

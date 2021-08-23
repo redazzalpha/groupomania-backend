@@ -7,6 +7,7 @@ ER_BAD_PEP: error bad pseudo email password
 ER_EMP_PUB: error empty publication
 ER_EMP_COM: error empty comment
 ER_BEA_TKN: error verify token: Bearer not found
+ER_CHK_PASS: error check password
 
 # SUCCESS
 
@@ -21,5 +22,7 @@ SCS_UPT_PSW: success update password
 SCS_DEL_ACC: success delete account
 SCS_AUTH_ACC: success authorized access
 SCS_REA_NOT: success read notif
+SCS_MDF_PASS: success modify password
+SCS_DEL_PROF: success delete profil 
 
 //SCS_GET_PUB: success get publications

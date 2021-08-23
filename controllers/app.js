@@ -12,6 +12,8 @@ function mysqlCmd(query) {
     });
 }
 
+// get controllers
+
 exports.accessHome = (req, res) => {
 
     res.status(200).json({ message: "home authorized access", code: "SCS_ACC_HOM"});
@@ -19,56 +21,56 @@ exports.accessHome = (req, res) => {
 exports.accessProfil = (req, res) => {
     res.status(200).json({ message: "profil authorized access", code: "SCS_ACC_PROF" });
 };
-exports.uptProfImg = (req, res) => {
+exports.accessNotif = (req, res) => {
+    res.status(200).json({ message: "successfully in notification" });
+};
+exports.accessTeam = (req, res) => {
+    res.status(200).json({ message: "successfully in team" });
+};
+exports.getPubs = (req, res) => {
+    mysql.query(`select * from publication left join user on authorId=userId ORDER BY time DESC`, (error, results) => {
+        if (error)
+            return res.status(500).json({ error });
+        for (let item of results)
+            item.text = Buffer.from(item.text).toString();
+        res.status(200).json({ results });
+    });
+};
+exports.getComment = (req, res) => {
 
-    const imgUrl = `${req.protocol}://${req.headers.host}/img/${req.file.filename}`;
-    const userData = req.decoded;
-    const updateUserQuery = `update user set img="${imgUrl}" where userId="${userData.userId}"`;
-    const getUserQuery = `select * from user where email="${req.decoded.email}"`;
+    mysql.query(`select * from comment left join publication on parentId=pubId left join user on writerId=userId order by comTime desc`, (error, results) => {
+        if (error)
+            return res.status(500).json({ error });
+        res.status(200).json({ results });
+    });
+};
+exports.getNotif = (req, res) => {
 
-    // update user publication and comment tables
-    // with user img input
-    mysqlCmd(updateUserQuery)
-        .then(() => {
-            // get user info and refresh token
-            mysqlCmd(getUserQuery)
-                .then(results => {
-                    const data = {
-                        token: services.generateTkn(results[0]),
-                        imgUrl
-                    };
-                    res.status(200).json({ data });                                            
-                })
-                .catch( error => res.status(500).json({ error }) );
+    const getNotifQuery = `select * from notif left join comment on fromId=comId left join user on writerId=userId left join publication on parentId = pubId order by comTime desc`;
+    mysqlCmd(getNotifQuery)
+        .then(results => {
+            for (let item of results)
+            item.text = Buffer.from(item.text).toString();
+            res.status(200).json({ results });
         })
-        .catch( error => res.status(500).json({ error })) ;
+        .catch( error => res.status(500).json({ error }));
 };
-exports.uptProfDesc = (req, res) => {
-    // Empty string is authorized 
-    // to delete previous description
-    if (req.body.description.length <= 255) {
-        const updateUserQuery = `update user set description="${req.body.description}" where userId="${req.decoded.userId}"`;
-        const getUserQuery = `select * from user where email="${req.decoded.email}"`;
-        mysqlCmd(updateUserQuery)
-            .then(() => {
-                mysqlCmd(getUserQuery)
-                    .then(results => {
-                        const data = {
-                            token: services.generateTkn(results[0]),
-                        };
-                        res.status(200).json({ data });                
-                    })
-                    .catch(error => res.status(500).json({ error }) );
-            })
-            .catch( error => res.status(500).json({ error }) );
-    }
+exports.getUsers = (req, res) => {
+    const getUsersQuery = `select * from user`;
+    mysqlCmd(getUsersQuery)
+        .then(results => {
+            res.status(200).json({ results });
+        })
+        .catch(error => {
+            res.status(500).json({ error });
+        });
 };
-exports.uptProfPasswd = (req, res) => {
-    res.status(200).json({ message: "Password updated succesfully", code: "SCS_UPT_PSW" });
+exports.autoLog = (req, res) => {
+    res.status(200).json({data: { token: req.token }});
 };
-exports.delAccount = (req, res) => {
-    res.status(200).json({ message: "Account deleted successfully", code: "SCS_DEL_ACC" });
-};
+
+// post controllers
+
 exports.publish = (req, res) => {
     if (services.isNotEmpty(req.body.publication)) {
         const authorId = req.decoded.userId;
@@ -80,22 +82,6 @@ exports.publish = (req, res) => {
         });    
     }
     else return res.status(401).json({ error: { message: "Publication is empty", code: "ER_EMP_PUB" } });
-};
-exports.getPubs = (req, res) => {
-    mysql.query(`select * from publication left join user on authorId=userId ORDER BY time DESC`, (error, results) => {
-        if (error)
-            return res.status(500).json({ error });
-        for (let item of results)
-            item.text = Buffer.from(item.text).toString();
-        res.status(200).json({ results });
-    });
-};
-exports.delPublication = (req, res) => {
-
-    const delPubQuery = `delete publication, comment, notif from publication left join comment on pubId = parentId  left join notif on comId = fromId where pubId = ${req.body.pubId}`;
-    mysqlCmd(delPubQuery)
-        .then(() => res.status(200).json({ message: "Publication successfully deleted", code: "SCS_DEL_PUB" }))
-        .catch(error => { return res.status(500).json({ error }); });                    
 };
 exports.comment = (req, res) => {
 
@@ -127,56 +113,6 @@ exports.comment = (req, res) => {
             .catch(error => res.status(500).json({ error }));
     }
     else return res.status(401).json({ error: { message: "Cooment is empty", code: "ER_EMP_COM" } });
-};
-exports.getComment = (req, res) => {
-
-    mysql.query(`select * from comment left join publication on parentId=pubId left join user on writerId=userId order by comTime desc`, (error, results) => {
-        if (error)
-            return res.status(500).json({ error });
-        res.status(200).json({ results });
-    });
-};
-exports.delComment = (req, res) => {
-
-    const delComQuery = `delete comment, notif from comment left join notif on comId = fromId where comId = ${req.body.comId}`;
-    mysqlCmd(delComQuery)
-        .then(() => res.status(200).json({ message: "Comment successfully deleted", code: "SCS_DEL_COM" }) )
-        .catch(error => res.status(500).json({ error }) );
-}
-exports.accessNotif = (req, res) => {
-    res.status(200).json({ message: "successfully in notification" });
-};
-exports.getNotif = (req, res) => {
-
-    const getNotifQuery = `select * from notif left join comment on fromId=comId left join user on writerId=userId left join publication on parentId = pubId order by comTime desc`;
-    mysqlCmd(getNotifQuery)
-        .then(results => {
-            for (let item of results)
-            item.text = Buffer.from(item.text).toString();
-            res.status(200).json({ results });
-        })
-        .catch( error => res.status(500).json({ error }));
-};
-exports.readNotif = (req, res) => {
-
-    const updateNotifQuery = `update notif set state="read" where notifId=${req.body.notifId}`;
-    mysqlCmd(updateNotifQuery)
-        .then((/*results*/) => res.status(200).json({ message: "notification read", code: "SCS_REA_NOT" }) )
-        .catch( error => res.status(500).json({ error }));
-};
-exports.delNotif = (req, res) => {
-
-    const delNotifQuery = `delete from notif where notifId=${req.body.notifId}`;
-    mysqlCmd(delNotifQuery)
-        .then(results => res.status(200).json({ results }) )
-        .catch( error => res.status(500).json({ error }));
-    
-};
-exports.accessTeam = (req, res) => {
-    res.status(200).json({ message: "successfully in team" });
-};
-exports.autoLog = (req, res) => {
-    res.status(200).json({data: { token: req.token }});
 };
 exports.like = (req, res) => {
 
@@ -223,17 +159,58 @@ exports.undislike = (req, res) => {
         })
         .catch( error => res.status(400).json({ error }) );
 };
-exports.getUsers = (req, res) => {
-    const getUsersQuery = `select * from user`;
-    mysqlCmd(getUsersQuery)
-        .then(results => {
-            res.status(200).json({ results });
+exports.uptProfImg = (req, res) => {
+
+    const imgUrl = `${req.protocol}://${req.headers.host}/img/${req.file.filename}`;
+    const userData = req.decoded;
+    const updateUserQuery = `update user set img="${imgUrl}" where userId="${userData.userId}"`;
+    const getUserQuery = `select * from user where email="${req.decoded.email}"`;
+
+    // update user publication and comment tables
+    // with user img input
+    mysqlCmd(updateUserQuery)
+        .then(() => {
+            // get user info and refresh token
+            mysqlCmd(getUserQuery)
+                .then(results => {
+                    const data = {
+                        token: services.generateTkn(results[0]),
+                        imgUrl
+                    };
+                    res.status(200).json({ data });                                            
+                })
+                .catch( error => res.status(500).json({ error }) );
         })
-        .catch(error => {
-            res.status(500).json({ error });
-        });
+        .catch( error => res.status(500).json({ error })) ;
 };
-exports.modifyPassword = (req, res) => {
+exports.uploadImg = (req, res) => {
+    const imgUrl = `${req.protocol}://${req.headers.host}/img/${req.file.filename}`;
+    res.status(201).json({ imgUrl });
+};
+
+// patch controllers
+
+exports.uptProfDesc = (req, res) => {
+    // Empty string is authorized 
+    // to delete previous description
+    if (req.params.desc.length <= 255) {
+        const updateUserQuery = `update user set description="${req.params.desc}" where userId="${req.decoded.userId}"`;
+        const getUserQuery = `select * from user where email="${req.decoded.email}"`;
+        mysqlCmd(updateUserQuery)
+            .then(() => {
+                mysqlCmd(getUserQuery)
+                    .then(results => {
+                        const data = {
+                            token: services.generateTkn(results[0]),
+                        };
+                        res.status(200).json({ data });                
+                    })
+                    .catch(error => res.status(500).json({ error }) );
+            })
+            .catch( error => res.status(500).json({ error }) );
+    }
+};
+exports.uptProfPasswd = (req, res) => {
     const getHashPasswdQuery = `select password from user where userId=${req.decoded.userId} `;
     mysqlCmd(getHashPasswdQuery)
         .then(results => {
@@ -261,15 +238,43 @@ exports.modifyPassword = (req, res) => {
         })
         .catch(error => res.status(500).json({text: error }) );
 };
-exports.deleteProf = (req, res) => {
+exports.readNotif = (req, res) => {
+
+    const updateNotifQuery = `update notif set state="read" where notifId=${req.params.notifId}`;
+    mysqlCmd(updateNotifQuery)
+        .then((/*results*/) => res.status(200).json({ message: "notification read", code: "SCS_REA_NOT" }) )
+        .catch( error => res.status(500).json({ error }));
+};
+
+// delete controllers
+
+exports.delPublication = (req, res) => {
+
+    const delPubQuery = `delete publication, comment, notif from publication left join comment on pubId = parentId  left join notif on comId = fromId where pubId = ${req.params.pubId}`;
+    mysqlCmd(delPubQuery)
+        .then(() => res.status(200).json({ message: "Publication successfully deleted", code: "SCS_DEL_PUB" }))
+        .catch(error => { return res.status(500).json({ error }); });                    
+};
+exports.delComment = (req, res) => {
+
+    const delComQuery = `delete comment, notif from comment left join notif on comId = fromId where comId = ${req.params.comId}`;
+    mysqlCmd(delComQuery)
+        .then(() => res.status(200).json({ message: "Comment successfully deleted", code: "SCS_DEL_COM" }))
+        .catch(error => res.status(500).json({ error }));
+};
+exports.delNotif = (req, res) => {
+
+    const delNotifQuery = `delete from notif where notifId=${req.params.notifId}`;
+    mysqlCmd(delNotifQuery)
+        .then(results => res.status(200).json({ results }) )
+        .catch( error => res.status(500).json({ error }));
+    
+};
+exports.delProfil = (req, res) => {
     console.log(`req.params.id: ${req.params.id}`)
     const delProfQuery = `delete user, publication, comment, notif from user left join publication on userId=authorId left join comment on userId=writerId left join notif on userId=whereId where userId=${req.params.id}`;
     mysqlCmd(delProfQuery)
         .then( () => res.status(200).json({ message: "Profil deleted successfully", code: "SCS_DEL_PROF" }) )
         .catch( error => res.status(500).json({ error }));    
-};
-exports.insertImg = (req, res) => {
-    const imgUrl = `${req.protocol}://${req.headers.host}/img/${req.file.filename}`;
-    res.status(201).json({ imgUrl });
 };
 

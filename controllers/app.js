@@ -12,7 +12,7 @@ function mysqlCmd(query) {
     });
 }
 
-// get controllers
+// head controllers
 
 exports.accessHome = (req, res) => {
 
@@ -27,6 +27,9 @@ exports.accessNotif = (req, res) => {
 exports.accessTeam = (req, res) => {
     res.status(200).json({ message: "successfully in team" });
 };
+
+// get controllers
+
 exports.getPubs = (req, res) => {
     mysql.query(`select * from publication left join user on authorId=userId ORDER BY time DESC`, (error, results) => {
         if (error)

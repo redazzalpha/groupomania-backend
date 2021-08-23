@@ -4,10 +4,11 @@ const router = express.Router();
 const appCtrl = require('../controllers/app');
 const auth = require('../middlewares/auth');
 
-router.get("/home", auth, appCtrl.accessHome);
-router.get("/profil", auth, appCtrl.accessProfil);
-router.get("/notification", auth, appCtrl.accessNotif);
-router.get("/team", auth, appCtrl.accessTeam);
+router.head("/home", auth, appCtrl.accessHome);
+router.head("/profil", auth, appCtrl.accessProfil);
+router.head("/notification", auth, appCtrl.accessNotif);
+router.head("/team", auth, appCtrl.accessTeam);
+
 router.get("/publish", auth, appCtrl.getPubs);
 router.get("/publish/comment", auth, appCtrl.getComment);
 router.get("/notification/notifs", auth, appCtrl.getNotif);

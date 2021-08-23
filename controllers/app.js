@@ -73,7 +73,7 @@ exports.publish = (req, res) => {
     if (services.isNotEmpty(req.body.publication)) {
         const authorId = req.decoded.userId;
         const text = req.body.publication;
-        mysql.query(`insert into publication (authorId, text, time, postLike, postDislike) values ('${authorId}', BINARY '${text}', '${services.now()}', 0, 0)`, (error) => {
+        mysql.query(`insert into publication (authorId, text, time, postLike, postDislike) values ('${authorId}', '${text}', '${services.now()}', 0, 0)`, (error) => {
             if (error)
                 return res.status(500).json({ error });
             res.status(201).json({ message: "Publication successfully sent", code: "SCS_PBSH_PUB" });
@@ -267,5 +267,9 @@ exports.deleteProf = (req, res) => {
     mysqlCmd(delProfQuery)
         .then( () => res.status(200).json({ message: "Profil deleted successfully", code: "SCS_DEL_PROF" }) )
         .catch( error => res.status(500).json({ error }));    
+};
+exports.insertImg = (req, res) => {
+    const imgUrl = `${req.protocol}://${req.headers.host}/img/${req.file.filename}`;
+    res.status(201).json({ imgUrl });
 };
 

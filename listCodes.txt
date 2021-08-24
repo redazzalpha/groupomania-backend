@@ -18,6 +18,9 @@ SCS_DEL_COM: success delete comment
 SCS_DEL_PUB : success delete publication
 SCS_ACC_HOM: success home authorized access
 SCS_ACC_PROF: success profil authorized access
+SCS_ACC_NOT: success notification authorized access
+SCS_ACC_TEA: success team authorized access
+SCS_AUT_LOG: success auto log
 SCS_DEL_ACC: success delete account
 SCS_AUTH_ACC: success authorized access
 SCS_REA_NOT: success read notif

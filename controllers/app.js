@@ -1,6 +1,7 @@
 const mysql = require("../mysql");
 const bcrypt = require("bcrypt");
 const services = require("../services/server.service");
+const jwt = require('jsonwebtoken');
 
 function mysqlCmd(query) {
     return new Promise((revolve, reject) => {
@@ -15,18 +16,21 @@ function mysqlCmd(query) {
 // head controllers
 
 exports.accessHome = (req, res) => {
-
-    res.status(200).json({ message: "home authorized access", code: "SCS_ACC_HOM"});
+    res.status(200).json({ message: "Home authorized access", code: "SCS_ACC_HOM"});
 };
 exports.accessProfil = (req, res) => {
-    res.status(200).json({ message: "profil authorized access", code: "SCS_ACC_PROF" });
+    res.status(200).json({ message: "Profil authorized access", code: "SCS_ACC_PROF" });
 };
 exports.accessNotif = (req, res) => {
-    res.status(200).json({ message: "successfully in notification" });
+    res.status(200).json({ message: "Notification authorized access", code: "SCS_ACC_NOT" });
 };
 exports.accessTeam = (req, res) => {
-    res.status(200).json({ message: "successfully in team" });
+    res.status(200).json({ message: "Team authorized access", code: "SCS_ACC_TEA" });
 };
+exports.autoLog = (req, res) => {
+    res.status(200).json({ message: "Auto authorized access", code: "SCS_AUT_LOG" });
+};
+
 
 // get controllers
 
@@ -67,9 +71,6 @@ exports.getUsers = (req, res) => {
         .catch(error => {
             res.status(500).json({ error });
         });
-};
-exports.autoLog = (req, res) => {
-    res.status(200).json({data: { token: req.token }});
 };
 
 // post controllers
@@ -190,14 +191,38 @@ exports.uploadImg = (req, res) => {
     const imgUrl = `${req.protocol}://${req.headers.host}/img/${req.file.filename}`;
     res.status(201).json({ imgUrl });
 };
+exports.token = (req, res) => {
+
+    if (req.body && req.body.tokenRfrsh != null && req.body.tokenRfrsh != undefined) {
+        // check token signature and validity 
+        const tokenRfrsh = req.body.tokenRfrsh;
+        jwt.verify(tokenRfrsh, process.env.SEC_SES_REFRESH, (error, decoded) => {
+            if (error) return res.status(401).json({ error });
+            // if token refresh is ok 
+            else {
+                if (req.headers.authorization) {
+                    const token = req.headers.authorization.split(" ")[1];
+                    const data = {
+                        token: services.generateTkn(jwt.decode(token)),
+                        tokenRfrsh
+                    };
+                    req.decoded = decoded;
+                    return res.status(201).json({ data });
+                }
+            }
+        });
+    }
+    else res.status(401).json({ message: "Failed verify token: Bearer token not found", code: "ER_BEA_TKN" });
+};
 
 // patch controllers
 
 exports.uptProfDesc = (req, res) => {
+
     // Empty string is authorized 
     // to delete previous description
-    if (req.params.desc.length <= 255) {
-        const updateUserQuery = `update user set description="${req.params.desc}" where userId="${req.decoded.userId}"`;
+    if (req.body.desc.length <= 255) {
+        const updateUserQuery = `update user set description="${req.body.desc}" where userId="${req.decoded.userId}"`;
         const getUserQuery = `select * from user where email="${req.decoded.email}"`;
         mysqlCmd(updateUserQuery)
             .then(() => {
@@ -218,7 +243,7 @@ exports.uptProfPasswd = (req, res) => {
     mysqlCmd(getHashPasswdQuery)
         .then(results => {
             const hash = results[0].password;
-            bcrypt.compare(req.params.old, hash, (error, ready) => {
+            bcrypt.compare(req.body.old, hash, (error, ready) => {
                 if (error)
                     return res.status(500).json({ error });
                 if (!ready)
@@ -228,7 +253,7 @@ exports.uptProfPasswd = (req, res) => {
                     if (error)
                         return res.status(500).json({ error });
                     // generate hash from request  password
-                    bcrypt.hash(req.params.new, salt, (error, hash) => {
+                    bcrypt.hash(req.body.new, salt, (error, hash) => {
                         if (error)
                             return res.status(500).json({ error });
                         const modifyPasswdQuery = `update user set password="${hash}" where userId=${req.decoded.userId}`;
@@ -242,8 +267,7 @@ exports.uptProfPasswd = (req, res) => {
         .catch(error => res.status(500).json({text: error }) );
 };
 exports.readNotif = (req, res) => {
-
-    const updateNotifQuery = `update notif set state="read" where notifId=${req.params.notifId}`;
+    const updateNotifQuery = `update notif set state="read" where notifId=${req.body.notifId}`;
     mysqlCmd(updateNotifQuery)
         .then((/*results*/) => res.status(200).json({ message: "notification read", code: "SCS_REA_NOT" }) )
         .catch( error => res.status(500).json({ error }));
@@ -253,29 +277,28 @@ exports.readNotif = (req, res) => {
 
 exports.delPublication = (req, res) => {
 
-    const delPubQuery = `delete publication, comment, notif from publication left join comment on pubId = parentId  left join notif on comId = fromId where pubId = ${req.params.pubId}`;
+    const delPubQuery = `delete publication, comment, notif from publication left join comment on pubId = parentId  left join notif on comId = fromId where pubId = ${req.query.pubId}`;
     mysqlCmd(delPubQuery)
         .then(() => res.status(200).json({ message: "Publication successfully deleted", code: "SCS_DEL_PUB" }))
         .catch(error => { return res.status(500).json({ error }); });                    
 };
 exports.delComment = (req, res) => {
 
-    const delComQuery = `delete comment, notif from comment left join notif on comId = fromId where comId = ${req.params.comId}`;
+    const delComQuery = `delete comment, notif from comment left join notif on comId = fromId where comId = ${req.query.comId}`;
     mysqlCmd(delComQuery)
         .then(() => res.status(200).json({ message: "Comment successfully deleted", code: "SCS_DEL_COM" }))
         .catch(error => res.status(500).json({ error }));
 };
 exports.delNotif = (req, res) => {
 
-    const delNotifQuery = `delete from notif where notifId=${req.params.notifId}`;
+    const delNotifQuery = `delete from notif where notifId=${req.query.notifId}`;
     mysqlCmd(delNotifQuery)
         .then(results => res.status(200).json({ results }) )
         .catch( error => res.status(500).json({ error }));
     
 };
 exports.delProfil = (req, res) => {
-    console.log(`req.params.id: ${req.params.id}`)
-    const delProfQuery = `delete user, publication, comment, notif from user left join publication on userId=authorId left join comment on userId=writerId left join notif on userId=whereId where userId=${req.params.id}`;
+    const delProfQuery = `delete user, publication, comment, notif from user left join publication on userId=authorId left join comment on userId=writerId left join notif on userId=whereId where userId=${req.query.id}`;
     mysqlCmd(delProfQuery)
         .then( () => res.status(200).json({ message: "Profil deleted successfully", code: "SCS_DEL_PROF" }) )
         .catch( error => res.status(500).json({ error }));    

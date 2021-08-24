@@ -42,7 +42,7 @@ const services = {
     },
     generateTkn: result => {
         const token = jwt.sign(
-            {
+            {                
                 userId: result.userId,
                 pseudo: result.pseudo,
                 email: result.email,
@@ -51,7 +51,6 @@ const services = {
                 notif: result.notif,
                 password: result.password,
                 rights: result.rights,
-                tokenRfsh: services.generateTknRfsh(result),
             },
             process.env.SEC_SES,
             { expiresIn: process.env.SEC_SES_LIFE }

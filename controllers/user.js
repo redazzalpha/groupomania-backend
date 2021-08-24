@@ -28,6 +28,7 @@ exports.login = (req, res) => {
                     //  send token
                     const data = {
                         token: services.generateTkn(result),
+                        tokenRfrsh: services.generateTknRfsh(result),
                     };
                     res.status(200).json({ data });
                 });

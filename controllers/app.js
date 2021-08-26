@@ -105,14 +105,14 @@ exports.publish = (req, res) => {
             // create file path and image url
             // imgUrl will be used as the server path of the image file, 
             // in particular for the src attribute
-            const file = `img/pubs/${authorId}_${Date.now()}`;
-            imgUrl = `${req.protocol}://${req.headers.host}/${file}`;
+            const filePath = `img/pubs/${authorId}_${Date.now()}`;
+            imgUrl = `${req.protocol}://${req.headers.host}/${filePath}`;
             // write image file on server
-            fs.writeFile(`./${file}`, buffer.data, errorHandler);
+            fs.writeFile(filePath, buffer.data, errorHandler);
             // set src attribute of img html element
             img.src = imgUrl;
             // store file path into mem array 
-            mem.push(file);
+            mem.push(filePath);
         }
         // reset publication text with inserted image server path into src attribute of img html element
         text = dom.window.document.body.innerHTML;
@@ -333,16 +333,14 @@ exports.delPublication = (req, res) => {
 
     const getPathImgsQuery = `select path from publication left join picture on pubId = whoId where pubId = ${req.query.pubId}`;
     const delPubQuery = `delete publication, picture, comment, notif from publication left join picture on pubId = whoId left join comment on pubId = parentId  left join notif on comId = fromId where pubId = ${req.query.pubId}`;
-    const errorHandler = (error) => {
-        console.error(error);
-    };
+    const errorHandler = (error) => { if(error) console.error(error); };
     
     mysqlCmd(getPathImgsQuery)
         .then(results => {
             mysqlCmd(delPubQuery)
                 .then(() => {
                     for (let item of results)
-                        fs.unlink(`./${item.path}`, errorHandler);
+                        fs.unlink(item.path, errorHandler);
                     res.status(200).json({ message: "Publication successfully deleted", code: "SCS_DEL_PUB" });
                 })
                 .catch(error => { return res.status(500).json({ error }); });                    
@@ -367,19 +365,23 @@ exports.delNotif = (req, res) => {
 exports.delAccount = (req, res) => {
 
     const getPathImgsQuery = `select path from user left join publication on userId = authorId left join picture on pubId = whoId where userId = ${req.query.id}`;
-    const delAccQuery = `delete user, publication, picture, comment, notif from user left join publication on userId=authorId left join picture on pubId = whoId left join comment on userId=writerId left join notif on userId=whereId where userId=${req.query.id}`;
-    const errorHandler = (error) => {
-        console.error(error);
-    };
+    const delAccQuery = `delete user, publication, picture, comment, notif from user left join publication on userId=authorId left join picture on pubId=whoId left join comment on userId=writerId left join notif on userId=whereId where userId=${req.query.id}`;
+    const errorHandler = (error) => { if(error) console.error(error); };
 
     mysqlCmd(getPathImgsQuery)
         .then(results => {
             mysqlCmd(delAccQuery)
-                .then(() => {
-                    for (let item of results)
-                        fs.unlink(`./${item.path}`, errorHandler);
-                        res.status(200).json({ message: "Profil deleted successfully", code: "SCS_DEL_ACC" });        
-                    })
+                .then( () => {
+                    const file = `img/${req.decoded.img.split("img/")[1]}`;
+                    fs.unlink(file, errorHandler);
+                    
+    
+                    for (let item of results) {
+                        if(item.path != null)
+                            fs.unlink(item.path, errorHandler);
+                    }
+                    res.status(200).json({ message: "Profil deleted successfully", code: "SCS_DEL_ACC" });        
+                })
                 .catch(error => { return res.status(500).json({ error }); });                    
         })
         .catch(error => { return res.status(500).json({ error }); });                    

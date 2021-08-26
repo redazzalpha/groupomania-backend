@@ -1,4 +1,6 @@
-#ERRORS
+# ERRORS
+
+This explains error codes.
 
 ER_INV_PASS: error invalid password
 ER_UNK_USER: error unknown user
@@ -11,6 +13,8 @@ ER_CHK_PASS: error check password
 ER_INV_IMG: error invalid data image
 
 # SUCCESS
+
+This explains success codes.
 
 SCS_PBSH_PUB: succes publish publication
 SCS_PST_CMT: succes post comment 
@@ -28,4 +32,32 @@ SCS_REA_NOT: success read notif
 SCS_MDF_PASS: success modify password
 SCS_DEL_ACC: success delete account 
 
-//SCS_GET_PUB: success get publications
+# MYSQL
+
+This explains existing relations between tables.
+
+-- user TABLE
+
+userId => refrers to user id;
+
+-- publication TABLE
+
+pubId: refrers to publication id;
+authorId: refrers to user id who created publication
+
+-- picture TABLE
+
+picId: refers to picture id
+whoId: refers to publication id where picture has been inserted
+
+-- comment TABLE
+
+comId: refers to comment id
+writerId: refers to user id who has created comment
+parentId: refers to publication where comment has been created
+
+-- notif TABLE
+
+notifId: refers to notification id
+fromId: refers to comment id that has emitted the  notification
+whereId: refers to user id which the notification belongs

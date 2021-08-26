@@ -2,6 +2,9 @@ const mysql = require("../mysql");
 const bcrypt = require("bcrypt");
 const services = require("../services/server.service");
 const jwt = require('jsonwebtoken');
+const fs = require('fs');
+const jsdom = require("jsdom");
+const { JSDOM } = jsdom;
 
 function mysqlCmd(query) {
     return new Promise((revolve, reject) => {
@@ -78,12 +81,63 @@ exports.getUsers = (req, res) => {
 exports.publish = (req, res) => {
     if (services.isNotEmpty(req.body.publication)) {
         const authorId = req.decoded.userId;
-        const text = req.body.publication;
-        mysql.query(`insert into publication (authorId, text, time, postLike, postDislike) values ('${authorId}', '${text}', '${services.now()}', 0, 0)`, (error) => {
+        let text = req.body.publication;
+        // dom will be used to recreate dom element for publications images
+        const dom = new JSDOM(text);
+        const tab = dom.window.document.getElementsByTagName("img");
+        let imgUrl = "";
+        // mem will be used to store image file paths
+        let mem = [];
+        const errorHandler = error => {
             if (error)
                 return res.status(500).json({ error });
-            res.status(201).json({ message: "Publication successfully sent", code: "SCS_PBSH_PUB" });
-        });    
+        };
+
+        // loop to write image on server and add image src attribute to created dom 
+        for (let img of tab) {
+            const matches = img.src.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
+            let buffer = {};
+            if (matches.length !== 3)
+                return res.status(500).json({message: 'Invalid image data', code: "ER_INV_IMG"});
+            // create buffer from base64 data image url
+            buffer.type = matches[1];
+            buffer.data = Buffer.from(matches[2], 'base64');
+            // create file path and image url
+            // imgUrl will be used as the server path of the image file, 
+            // in particular for the src attribute
+            const file = `img/pubs/${authorId}_${Date.now()}`;
+            imgUrl = `${req.protocol}://${req.headers.host}/${file}`;
+            // write image file on server
+            fs.writeFile(`./${file}`, buffer.data, errorHandler);
+            // set src attribute of img html element
+            img.src = imgUrl;
+            // store file path into mem array 
+            mem.push(file);
+        }
+        // reset publication text with inserted image server path into src attribute of img html element
+        text = dom.window.document.body.innerHTML;
+
+        const publishQuery = `insert into publication (authorId, text, time, postLike, postDislike) values ('${authorId}', '${text}', '${services.now()}', 0, 0)`;
+        const getPubId = `select last_insert_id() from publication`;
+
+        mysqlCmd(publishQuery)
+            .then(() => {
+                mysqlCmd(getPubId)
+                    // async callback on then() required to loop 
+                    // mysql commands
+                    .then(async results => {
+                        const pubId = results[0]["last_insert_id()"];
+                        // loop fto insert 
+                        for (let url of mem) {
+                            let setPicsQuery = `insert into picture (whoId, path) values (${pubId}, "${url}")`;
+                            let result = await mysqlCmd(setPicsQuery);
+                            if (result.error) return res.status(500).json({ error: result.error });
+                        }
+                        return res.status(201).json({ message: "Publication successfully sent", code: "SCS_PBSH_PUB" });
+                    })
+                    .catch(error => res.status(500).json({ error }));
+            })
+            .catch(error => res.status(500).json({ error }));
     }
     else return res.status(401).json({ error: { message: "Publication is empty", code: "ER_EMP_PUB" } });
 };
@@ -116,7 +170,7 @@ exports.comment = (req, res) => {
             })
             .catch(error => res.status(500).json({ error }));
     }
-    else return res.status(401).json({ error: { message: "Cooment is empty", code: "ER_EMP_COM" } });
+    else return res.status(401).json({ error: { message: "Comment is empty", code: "ER_EMP_COM" } });
 };
 exports.like = (req, res) => {
 
@@ -181,15 +235,15 @@ exports.uptProfImg = (req, res) => {
                         token: services.generateTkn(results[0]),
                         imgUrl
                     };
+                    if (req.decoded.img != null) {
+                        const file = `img/${req.decoded.img.split("img/")[1]}`;
+                        fs.unlink(file, () => {});
+                    }
                     res.status(200).json({ data });                                            
                 })
                 .catch( error => res.status(500).json({ error }) );
         })
         .catch( error => res.status(500).json({ error })) ;
-};
-exports.uploadImg = (req, res) => {
-    const imgUrl = `${req.protocol}://${req.headers.host}/img/${req.file.filename}`;
-    res.status(201).json({ imgUrl });
 };
 exports.token = (req, res) => {
 
@@ -277,9 +331,22 @@ exports.readNotif = (req, res) => {
 
 exports.delPublication = (req, res) => {
 
-    const delPubQuery = `delete publication, comment, notif from publication left join comment on pubId = parentId  left join notif on comId = fromId where pubId = ${req.query.pubId}`;
-    mysqlCmd(delPubQuery)
-        .then(() => res.status(200).json({ message: "Publication successfully deleted", code: "SCS_DEL_PUB" }))
+    const getPathImgsQuery = `select path from publication left join picture on pubId = whoId where pubId = ${req.query.pubId}`;
+    const delPubQuery = `delete publication, picture, comment, notif from publication left join picture on pubId = whoId left join comment on pubId = parentId  left join notif on comId = fromId where pubId = ${req.query.pubId}`;
+    const errorHandler = (error) => {
+        console.error(error);
+    };
+    
+    mysqlCmd(getPathImgsQuery)
+        .then(results => {
+            mysqlCmd(delPubQuery)
+                .then(() => {
+                    for (let item of results)
+                        fs.unlink(`./${item.path}`, errorHandler);
+                    res.status(200).json({ message: "Publication successfully deleted", code: "SCS_DEL_PUB" });
+                })
+                .catch(error => { return res.status(500).json({ error }); });                    
+        })
         .catch(error => { return res.status(500).json({ error }); });                    
 };
 exports.delComment = (req, res) => {
@@ -297,10 +364,24 @@ exports.delNotif = (req, res) => {
         .catch( error => res.status(500).json({ error }));
     
 };
-exports.delProfil = (req, res) => {
-    const delProfQuery = `delete user, publication, comment, notif from user left join publication on userId=authorId left join comment on userId=writerId left join notif on userId=whereId where userId=${req.query.id}`;
-    mysqlCmd(delProfQuery)
-        .then( () => res.status(200).json({ message: "Profil deleted successfully", code: "SCS_DEL_PROF" }) )
-        .catch( error => res.status(500).json({ error }));    
+exports.delAccount = (req, res) => {
+
+    const getPathImgsQuery = `select path from user left join publication on userId = authorId left join picture on pubId = whoId where userId = ${req.query.id}`;
+    const delAccQuery = `delete user, publication, picture, comment, notif from user left join publication on userId=authorId left join picture on pubId = whoId left join comment on userId=writerId left join notif on userId=whereId where userId=${req.query.id}`;
+    const errorHandler = (error) => {
+        console.error(error);
+    };
+
+    mysqlCmd(getPathImgsQuery)
+        .then(results => {
+            mysqlCmd(delAccQuery)
+                .then(() => {
+                    for (let item of results)
+                        fs.unlink(`./${item.path}`, errorHandler);
+                        res.status(200).json({ message: "Profil deleted successfully", code: "SCS_DEL_ACC" });        
+                    })
+                .catch(error => { return res.status(500).json({ error }); });                    
+        })
+        .catch(error => { return res.status(500).json({ error }); });                    
 };
 

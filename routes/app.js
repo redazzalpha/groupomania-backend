@@ -22,8 +22,7 @@ router.post("/publish/dislike", auth, appCtrl.dislike);
 router.post("/publish/unlike", auth, appCtrl.unlike);
 router.post("/publish/undislike", auth, appCtrl.undislike);
 router.post("/profil/img", auth, multer, appCtrl.uptProfImg);
-router.post("/img", auth, multer, appCtrl.uploadImg);
-router.post("/token",  appCtrl.token);
+router.post("/token", appCtrl.token);
 
 router.patch("/profil/description", auth, appCtrl.uptProfDesc);
 router.patch("/password", auth, appCtrl.uptProfPasswd);
@@ -32,7 +31,7 @@ router.patch("/notification/read", auth, appCtrl.readNotif);
 router.delete("/publish/delete?:pubId", auth, appCtrl.delPublication);
 router.delete("/publish/comment/delete?:comId", auth, appCtrl.delComment);
 router.delete("/notification/delete?:notifId", auth, appCtrl.delNotif);
-router.delete("/profil?:id", auth, appCtrl.delProfil);
+router.delete("/account?:id", auth, appCtrl.delAccount);
 
 
 module.exports = router;

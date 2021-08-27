@@ -339,8 +339,10 @@ exports.delPublication = (req, res) => {
         .then(results => {
             mysqlCmd(delPubQuery)
                 .then(() => {
-                    for (let item of results)
-                        fs.unlink(item.path, errorHandler);
+                    for (let item of results) {
+                        if(item.path != null)
+                            fs.unlink(item.path, errorHandler);
+                    }
                     res.status(200).json({ message: "Publication successfully deleted", code: "SCS_DEL_PUB" });
                 })
                 .catch(error => { return res.status(500).json({ error }); });                    

@@ -41,8 +41,6 @@ exports.getPubs = (req, res) => {
     mysql.query(`select * from publication left join user on authorId=userId ORDER BY time DESC`, (error, results) => {
         if (error)
             return res.status(500).json({ error });
-        for (let item of results)
-            item.text = Buffer.from(item.text).toString();
         res.status(200).json({ results });
     });
 };
@@ -58,22 +56,14 @@ exports.getNotif = (req, res) => {
 
     const getNotifQuery = `select * from notif left join comment on fromId=comId left join user on writerId=userId left join publication on parentId = pubId order by comTime desc`;
     mysqlCmd(getNotifQuery)
-        .then(results => {
-            for (let item of results)
-            item.text = Buffer.from(item.text).toString();
-            res.status(200).json({ results });
-        })
+        .then(results => res.status(200).json({ results }) )
         .catch( error => res.status(500).json({ error }));
 };
 exports.getUsers = (req, res) => {
     const getUsersQuery = `select * from user`;
     mysqlCmd(getUsersQuery)
-        .then(results => {
-            res.status(200).json({ results });
-        })
-        .catch(error => {
-            res.status(500).json({ error });
-        });
+        .then(results => res.status(200).json({ results }) )
+        .catch( error => res.status(500).json({ error }));
 };
 
 // post controllers

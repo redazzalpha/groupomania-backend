@@ -38,10 +38,11 @@ exports.autoLog = (req, res) => {
 // get controllers
 
 exports.getPubs = (req, res) => {
-    mysql.query(`select * from publication left join user on authorId=userId ORDER BY time DESC`, (error, results) => {
-        if (error)
-            return res.status(500).json({ error });
-        res.status(200).json({ results });
+
+    mysql.query(`select * from publication left join user on authorId=userId ORDER BY time DESC limit 2`, (error, results) => {
+       if (error)
+           return res.status(500).json({ error });
+       res.status(200).json({ results });
     });
 };
 exports.getComment = (req, res) => {
@@ -64,6 +65,17 @@ exports.getUsers = (req, res) => {
     mysqlCmd(getUsersQuery)
         .then(results => res.status(200).json({ results }) )
         .catch( error => res.status(500).json({ error }));
+};
+exports.pubScroll = (req, res) => {
+    const lpubid = req.query.lpubid.id;
+    const condition = lpubid != 0 ? `where pubId < ${lpubid}` : '';
+    const scrollQuerry = `select * from publication left join user on authorId=userId  ${condition}  ORDER BY time DESC limit 2`;
+    mysql.query(scrollQuerry, (error, results) => {
+
+        if (error)
+            return res.status(500).json({ error });
+        res.status(200).json({ results });
+    });
 };
 
 // post controllers

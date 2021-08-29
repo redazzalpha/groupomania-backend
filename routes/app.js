@@ -12,6 +12,7 @@ router.head("/autolog", auth, appCtrl.autoLog);
 
 router.get("/publish", auth, appCtrl.getPubs);
 router.get("/publish/comment", auth, appCtrl.getComment);
+router.get("/publish/scroll?:lpubid", auth, appCtrl.pubScroll);
 router.get("/notification/notifs", auth, appCtrl.getNotif);
 router.get("/team/users", auth, appCtrl.getUsers);
 

@@ -34,7 +34,6 @@ exports.autoLog = (req, res) => {
     res.status(200).json({ message: "Auto authorized access", code: "SCS_AUT_LOG" });
 };
 
-
 // get controllers
 
 exports.getPubs = (req, res) => {
@@ -61,7 +60,7 @@ exports.getNotif = (req, res) => {
         .catch( error => res.status(500).json({ error }));
 };
 exports.getUsers = (req, res) => {
-    const getUsersQuery = `select * from user`;
+    const getUsersQuery = `select userId, pseudo, img, description, rights from user`;
     mysqlCmd(getUsersQuery)
         .then(results => res.status(200).json({ results }) )
         .catch( error => res.status(500).json({ error }));
@@ -336,6 +335,40 @@ exports.readNotif = (req, res) => {
         })
         .catch( error => res.status(500).json({ error }));
 };
+exports.readAll = async (req, res) => {
+
+
+    const getWhereIdQuery = ` select whereId from notif where notifId=${req.body.notifId}`;
+    mysqlCmd(getWhereIdQuery)
+        .then(results => {
+            if (results[0].whereId == req.decoded.userId) {
+                const readNotifQuery = `update notif set state="read" where whereId=${req.decoded.userId}`;
+                mysqlCmd(readNotifQuery)
+                    .then( () => res.status(200).json({ message: "All notifs state read successfully", code: "SCS_RA_NTF" }))
+                    .catch( error => res.status(500).json({ error }));
+            }
+            else res.status(401).json({ message: "You are not authorize to do this action", code: "ER_FAK_USE" });
+        })
+        .catch( error => res.status(500).json({ error }));
+};
+exports.deleteAll = (req, res) => {
+
+    const getWhereIdQuery = ` select whereId from notif where notifId=${req.body.notifId}`;
+    mysqlCmd(getWhereIdQuery)
+        .then(results => {
+            if (results[0].whereId == req.decoded.userId) {
+                const delNotifQuery = `delete from notif where whereId=${req.decoded.userId}`;
+                mysqlCmd(delNotifQuery)
+                    .then( () => res.status(200).json({ message: "All notifs has been deleted successfully", code: "SCS_DA_NTF" }))
+                    .catch( error => res.status(500).json({ error }));
+            }
+            else res.status(401).json({ message: "You are not authorize to do this action", code: "ER_FAK_USE" });
+        })
+        .catch( error => res.status(500).json({ error }));
+
+
+
+};
 exports.superUser = (req, res) => {
 
     const getRightsQuery = ` select rights from user where userId=${req.decoded.userId}`;
@@ -374,7 +407,7 @@ exports.delPublication = (req, res) => {
     const getAuthorIdQuery = `select authorId from publication where pubId=${req.query.pubId}`;
     mysqlCmd(getAuthorIdQuery)
         .then(results => {
-            if (results[0].authorId == req.decoded.userId) {
+            if (results[0].authorId == req.decoded.userId || req.decoded.rights == 'super') {
                 const getPathImgsQuery = `select path from publication left join picture on pubId = whoId where pubId = ${req.query.pubId}`;
                 const delPubQuery = `delete publication, picture, comment, notif from publication left join picture on pubId = whoId left join comment on pubId = parentId  left join notif on comId = fromId where pubId = ${req.query.pubId}`;
                 const errorHandler = (error) => { if(error) console.error(error); };
@@ -403,7 +436,7 @@ exports.delComment = (req, res) => {
     const getWhereIdQuery = `select writerId from comment where comId=${req.query.comId}`;
     mysqlCmd(getWhereIdQuery)
         .then(results => {
-            if (results[0].writerId == req.decoded.userId) {
+            if (results[0].writerId == req.decoded.userId || req.decoded.rights == 'super') {
                 const delComQuery = `delete comment, notif from comment left join notif on comId = fromId where comId = ${req.query.comId}`;
                 mysqlCmd(delComQuery)
                     .then(() => res.status(200).json({ message: "Comment successfully deleted", code: "SCS_DEL_COM" }))
@@ -418,7 +451,7 @@ exports.delNotif = (req, res) => {
     const getWhereIdQuery = `select whereId from notif where notifId=${req.query.notifId}`;
     mysqlCmd(getWhereIdQuery)
         .then(results => {
-            if (results[0].whereId == req.decoded.userId) {                
+            if (results[0].whereId == req.decoded.userId) {
                 const delNotifQuery = `delete from notif where notifId=${req.query.notifId}`;
                 mysqlCmd(delNotifQuery)
                     .then(results => res.status(200).json({ results }) )

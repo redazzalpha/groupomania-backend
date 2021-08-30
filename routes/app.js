@@ -28,6 +28,8 @@ router.post("/token", appCtrl.token);
 router.patch("/profil/description", auth, appCtrl.uptProfDesc);
 router.patch("/password", auth, appCtrl.uptProfPasswd);
 router.patch("/notification/read", auth, appCtrl.readNotif);
+router.patch("/notification/readall", auth, appCtrl.readAll);
+router.patch("/notification/deleteall", auth, appCtrl.deleteAll);
 router.patch("/authorize/super", auth, appCtrl.superUser);
 router.patch("/authorize/revoke", auth, appCtrl.revokeSuperUser);
 

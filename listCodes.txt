@@ -34,32 +34,34 @@ SCS_MDF_PASS: success modify password
 SCS_DEL_ACC: success delete account 
 SCS_RIG_SUP: success modify rights to super
 SCS_RIG_BAS: success modify rights to basic
+SCS_RA_NTF: success read all notifs
+SCS_DA_NTF: success delete all notifs
 
 # MYSQL
 
 This explains existing relations between tables.
 
--- user TABLE
+-- USER TABLE
 
 userId => refrers to user id;
 
--- publication TABLE
+-- PUBLICATION TABLE
 
 pubId: refrers to publication id;
 authorId: refrers to user id who created publication
 
--- picture TABLE
+-- PICTURE TABLE
 
 picId: refers to picture id
 whoId: refers to publication id where picture has been inserted
 
--- comment TABLE
+-- COMMENT TABLE
 
 comId: refers to comment id
 writerId: refers to user id who has created comment
 parentId: refers to publication where comment has been created
 
--- notif TABLE
+-- NOTIF TABLE
 
 notifId: refers to notification id
 fromId: refers to comment id that has emitted the  notification

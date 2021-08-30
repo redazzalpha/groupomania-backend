@@ -222,8 +222,7 @@ exports.undislike = (req, res) => {
 exports.uptProfImg = (req, res) => {
 
     const imgUrl = `${req.protocol}://${req.headers.host}/img/${req.file.filename}`;
-    const userData = req.decoded;
-    const updateUserQuery = `update user set img="${imgUrl}" where userId="${userData.userId}"`;
+    const updateUserQuery = `update user set img="${imgUrl}" where userId="${req.decoded.userId}"`;
     const getUserQuery = `select * from user where email="${req.decoded.email}"`;
 
     // update user publication and comment tables
@@ -323,23 +322,48 @@ exports.uptProfPasswd = (req, res) => {
         .catch(error => res.status(500).json({text: error }) );
 };
 exports.readNotif = (req, res) => {
-    const updateNotifQuery = `update notif set state="read" where notifId=${req.body.notifId}`;
-    mysqlCmd(updateNotifQuery)
-        .then((/*results*/) => res.status(200).json({ message: "notification read", code: "SCS_REA_NOT" }) )
+
+    const getWhereIdQuery = ` select whereId from notif where notifId=${req.body.notifId}`;
+    mysqlCmd(getWhereIdQuery)
+        .then(results => {
+            if (results[0].whereId == req.decoded.userId) {
+                const updateNotifQuery = `update notif set state="read" where notifId=${req.body.notifId}`;
+                mysqlCmd(updateNotifQuery)
+                    .then((/*results*/) => res.status(200).json({ message: "notification read", code: "SCS_REA_NOT" }))
+                    .catch(error => res.status(500).json({ error }));
+            }
+            else res.status(401).json({ message: "You are not authorize to do this action", code: "ER_FAK_USE" });
+        })
         .catch( error => res.status(500).json({ error }));
 };
 exports.superUser = (req, res) => {
 
-    const superUserQuery = `update user set rights="super" where userId=${req.body.id}`;
-    mysqlCmd(superUserQuery)
-        .then( () => res.status(200).json({message: "User has been set to super user successfully", code: ""}))
+    const getRightsQuery = ` select rights from user where userId=${req.decoded.userId}`;
+    mysqlCmd(getRightsQuery)
+        .then(results => {
+            if (results[0].rights == 'super') {
+                const superUserQuery = `update user set rights="super" where userId=${req.body.id}`;
+                mysqlCmd(superUserQuery)
+                    .then( () => res.status(200).json({message: "User has been set to super user successfully", code: "SCS_RIG_SUP"}))
+                    .catch( error => res.status(500).json({ error }));
+            }
+            else res.status(401).json({ message: "You are not authorize to do this action", code: "ER_FAK_USE" });
+        })
         .catch( error => res.status(500).json({ error }));
 };
 exports.revokeSuperUser = (req, res) => {
 
-    const superUserQuery = `update user set rights="basic" where userId=${req.body.id}`;
-    mysqlCmd(superUserQuery)
-        .then( () => res.status(200).json({message: "User has been set to basic user successfully", code: ""}))
+    const getRightsQuery = ` select rights from user where userId=${req.decoded.userId}`;
+    mysqlCmd(getRightsQuery)
+        .then(results => {
+            if (results[0].rights == 'super') {
+                const superUserQuery = `update user set rights="basic" where userId=${req.body.id}`;
+                mysqlCmd(superUserQuery)
+                    .then( () => res.status(200).json({message: "User has been set to basic user successfully", code: "SCS_RIG_BAS"}))
+                    .catch( error => res.status(500).json({ error }));
+            }
+            else res.status(401).json({ message: "You are not authorize to do this action", code: "ER_FAK_USE" });
+        })
         .catch( error => res.status(500).json({ error }));
 };
 
@@ -347,61 +371,88 @@ exports.revokeSuperUser = (req, res) => {
 
 exports.delPublication = (req, res) => {
 
-    const getPathImgsQuery = `select path from publication left join picture on pubId = whoId where pubId = ${req.query.pubId}`;
-    const delPubQuery = `delete publication, picture, comment, notif from publication left join picture on pubId = whoId left join comment on pubId = parentId  left join notif on comId = fromId where pubId = ${req.query.pubId}`;
-    const errorHandler = (error) => { if(error) console.error(error); };
-    
-    mysqlCmd(getPathImgsQuery)
+    const getAuthorIdQuery = `select authorId from publication where pubId=${req.query.pubId}`;
+    mysqlCmd(getAuthorIdQuery)
         .then(results => {
-            mysqlCmd(delPubQuery)
-                .then(() => {
-                    for (let item of results) {
-                        if(item.path != null)
-                            fs.unlink(item.path, errorHandler);
-                    }
-                    res.status(200).json({ message: "Publication successfully deleted", code: "SCS_DEL_PUB" });
-                })
-                .catch(error => { return res.status(500).json({ error }); });                    
+            if (results[0].authorId == req.decoded.userId) {
+                const getPathImgsQuery = `select path from publication left join picture on pubId = whoId where pubId = ${req.query.pubId}`;
+                const delPubQuery = `delete publication, picture, comment, notif from publication left join picture on pubId = whoId left join comment on pubId = parentId  left join notif on comId = fromId where pubId = ${req.query.pubId}`;
+                const errorHandler = (error) => { if(error) console.error(error); };
+                
+                mysqlCmd(getPathImgsQuery)
+                    .then(results => {
+                        mysqlCmd(delPubQuery)
+                            .then(() => {
+                                for (let item of results) {
+                                    if(item.path != null)
+                                        fs.unlink(item.path, errorHandler);
+                                }
+                                res.status(200).json({ message: "Publication successfully deleted", code: "SCS_DEL_PUB" });
+                            })
+                            .catch(error => { return res.status(500).json({ error }); });                    
+                    })
+                    .catch(error => { return res.status(500).json({ error }); });                    
+            }
+            else res.status(401).json({ message: "You are not authorize to do this action", code: "ER_FAK_USE" });
         })
-        .catch(error => { return res.status(500).json({ error }); });                    
+        .catch( error => res.status(500).json({ error }));
+
 };
 exports.delComment = (req, res) => {
 
-    const delComQuery = `delete comment, notif from comment left join notif on comId = fromId where comId = ${req.query.comId}`;
-    mysqlCmd(delComQuery)
-        .then(() => res.status(200).json({ message: "Comment successfully deleted", code: "SCS_DEL_COM" }))
-        .catch(error => res.status(500).json({ error }));
+    const getWhereIdQuery = `select writerId from comment where comId=${req.query.comId}`;
+    mysqlCmd(getWhereIdQuery)
+        .then(results => {
+            if (results[0].writerId == req.decoded.userId) {
+                const delComQuery = `delete comment, notif from comment left join notif on comId = fromId where comId = ${req.query.comId}`;
+                mysqlCmd(delComQuery)
+                    .then(() => res.status(200).json({ message: "Comment successfully deleted", code: "SCS_DEL_COM" }))
+                    .catch(error => res.status(500).json({ error }));
+            }
+            else res.status(401).json({ message: "You are not authorize to do this action", code: "ER_FAK_USE" });
+        })
+        .catch( error => res.status(500).json({ error }));
 };
 exports.delNotif = (req, res) => {
 
-    const delNotifQuery = `delete from notif where notifId=${req.query.notifId}`;
-    mysqlCmd(delNotifQuery)
-        .then(results => res.status(200).json({ results }) )
-        .catch( error => res.status(500).json({ error }));
-    
+    const getWhereIdQuery = `select whereId from notif where notifId=${req.query.notifId}`;
+    mysqlCmd(getWhereIdQuery)
+        .then(results => {
+            if (results[0].whereId == req.decoded.userId) {                
+                const delNotifQuery = `delete from notif where notifId=${req.query.notifId}`;
+                mysqlCmd(delNotifQuery)
+                    .then(results => res.status(200).json({ results }) )
+                    .catch( error => res.status(500).json({ error }));
+            }
+            else res.status(401).json({ message: "You are not authorize to do this action", code: "ER_FAK_USE" });
+        })
+        .catch( error => res.status(500).json({ error }));  
 };
 exports.delAccount = (req, res) => {
 
-    const getPathImgsQuery = `select path from user left join publication on userId = authorId left join picture on pubId = whoId where userId = ${req.query.id}`;
-    const delAccQuery = `delete user, publication, picture, comment, notif from user left join publication on userId=authorId left join picture on pubId=whoId left join comment on userId=writerId left join notif on userId=whereId where userId=${req.query.id}`;
-    const errorHandler = (error) => { if(error) console.error(error); };
-
-    mysqlCmd(getPathImgsQuery)
-        .then(results => {
-            mysqlCmd(delAccQuery)
-                .then( () => {
-                    const file = `img/${req.decoded.img.split("img/")[1]}`;
-                    fs.unlink(file, errorHandler);
-                    
+    if (req.query.id == req.decoded.userId) {
+        const getPathImgsQuery = `select path from user left join publication on userId = authorId left join picture on pubId = whoId where userId = ${req.query.id}`;
+        const delAccQuery = `delete user, publication, picture, comment, notif from user left join publication on userId=authorId left join picture on pubId=whoId left join comment on userId=writerId left join notif on userId=whereId where userId=${req.query.id}`;
+        const errorHandler = (error) => { if (error) console.error(error); };
     
-                    for (let item of results) {
-                        if(item.path != null)
-                            fs.unlink(item.path, errorHandler);
-                    }
-                    res.status(200).json({ message: "Profil deleted successfully", code: "SCS_DEL_ACC" });        
-                })
-                .catch(error => { return res.status(500).json({ error }); });                    
-        })
-        .catch(error => { return res.status(500).json({ error }); });                    
+        mysqlCmd(getPathImgsQuery)
+            .then(results => {
+                mysqlCmd(delAccQuery)
+                    .then(() => {
+                        const file = `img/${req.decoded.img.split("img/")[1]}`;
+                        fs.unlink(file, errorHandler);
+                        
+        
+                        for (let item of results) {
+                            if (item.path != null)
+                                fs.unlink(item.path, errorHandler);
+                        }
+                        res.status(200).json({ message: "Profil deleted successfully", code: "SCS_DEL_ACC" });
+                    })
+                    .catch(error => { return res.status(500).json({ error }); });
+            })
+            .catch(error => { return res.status(500).json({ error }); });
+    }
+    else res.status(401).json({ message: "You are not authorize to do this action", code: "ER_FAK_USE" });
 };
 

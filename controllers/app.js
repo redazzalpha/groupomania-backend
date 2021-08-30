@@ -328,6 +328,20 @@ exports.readNotif = (req, res) => {
         .then((/*results*/) => res.status(200).json({ message: "notification read", code: "SCS_REA_NOT" }) )
         .catch( error => res.status(500).json({ error }));
 };
+exports.superUser = (req, res) => {
+
+    const superUserQuery = `update user set rights="super" where userId=${req.body.id}`;
+    mysqlCmd(superUserQuery)
+        .then( () => res.status(200).json({message: "User has been set to super user successfully", code: ""}))
+        .catch( error => res.status(500).json({ error }));
+};
+exports.revokeSuperUser = (req, res) => {
+
+    const superUserQuery = `update user set rights="basic" where userId=${req.body.id}`;
+    mysqlCmd(superUserQuery)
+        .then( () => res.status(200).json({message: "User has been set to basic user successfully", code: ""}))
+        .catch( error => res.status(500).json({ error }));
+};
 
 // delete controllers
 

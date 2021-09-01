@@ -40,40 +40,44 @@ exports.login = (req, res) => {
 };
 exports.register = (req, res) => {
 
-    const fields = {
-        pseudo: req.body.pseudo,
-        email: req.body.email,
-        password: req.body.password,
-        rights: "basic",
-    };
-
-    // check user inputs
-    if (services.checkField(fields.pseudo) && services.checkEmail(fields.email) && services.checkPasswd(fields.password)) {
-
-        // generate salt for password encryption
-        bcrypt.genSalt(10, (error, salt) => {
-
-            if (error)
-                return res.status(500).json({ error });
-            
-            // generate hash from request  password
-            bcrypt.hash(fields.password, salt, (error, hash) => {
-
+    if (req.body && req.body.pseudo && req.body.email && req.body.password) {
+        const fields = {
+            pseudo: req.body.pseudo,
+            email: req.body.email,
+            password: req.body.password,
+            rights: "basic",
+            locked: 0,
+        };
+    
+        // check user inputs
+        if (services.checkField(fields.pseudo) && services.checkEmail(fields.email) && services.checkPasswd(fields.password)) {
+    
+            // generate salt for password encryption
+            bcrypt.genSalt(10, (error, salt) => {
+    
                 if (error)
                     return res.status(500).json({ error });
                 
-                // create new user, replace clear password by hash and save it 
-                mysql.query(`insert into user (pseudo, email, password, rights) values ("${fields.pseudo}", "${fields.email}", "${hash}", "${fields.rights}") `, (error) => {
-
+                // generate hash from request  password
+                bcrypt.hash(fields.password, salt, (error, hash) => {
+    
                     if (error)
-                        return res.status(500).json({ error });                    
-                    res.status(201).json({ messsage: "New user created successfully", code: "SCS_IN_REG" });
+                        return res.status(500).json({ error });
+                    
+                    // create new user, replace clear password by hash and save it 
+                    mysql.query(`insert into user (pseudo, email, password, rights, locked) values ("${fields.pseudo}", "${fields.email}", "${hash}", "${fields.rights}", "${fields.locked}") `, (error) => {
+    
+                        if (error)
+                            return res.status(500).json({ error });                    
+                        res.status(201).json({ messsage: "New user created successfully", code: "SCS_IN_REG" });
+                    });
                 });
+    
             });
-
-        });
+        }
+        else return res.status(400).json({ error: { message: "Error: Pseudo, email or password does not match", code: "ER_BAD_PEP" } });
     }
-    else return res.status(400).json({ error: { message: "Error: Pseudo, email or password does not match", code: "ER_BAD_PEP" } });
+    else res.status(500).json({ message: "Bad query error", code: "ER_BAD_QUE" });
 };
 
 

@@ -32,6 +32,8 @@ router.patch("/notification/readall", auth, appCtrl.readAll);
 router.patch("/notification/deleteall", auth, appCtrl.deleteAll);
 router.patch("/authorize/super", auth, appCtrl.superUser);
 router.patch("/authorize/revoke", auth, appCtrl.revokeSuperUser);
+router.patch("/profil/lock", auth, appCtrl.lockUser);
+router.patch("/profil/unlock", auth, appCtrl.unlockUser);
 
 router.delete("/publish/delete?:pubId", auth, appCtrl.delPublication);
 router.delete("/publish/comment/delete?:comId", auth, appCtrl.delComment);

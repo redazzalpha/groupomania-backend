@@ -7,6 +7,8 @@ const auth = (req, res, next) => {
         jwt.verify(token, process.env.SEC_SES, (error, decoded) => {
             if (error)
                 return res.status(401).json({ error });
+            if (decoded.locked)
+                return res.status(401).json({ message: 'Error your account is locked', code: 'ER_ACC_LOC' });
             req.decoded = decoded;
             next();
         });

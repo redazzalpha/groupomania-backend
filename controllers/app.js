@@ -57,7 +57,7 @@ exports.getNotif = (req, res) => {
         .catch( error => res.status(500).json({ error }));
 };
 exports.getUsers = (req, res) => {
-    const getUsersQuery = `select userId, pseudo, img, description, rights from user ORDER by pseudo`;
+    const getUsersQuery = `select userId, pseudo, img, description, rights, locked from user ORDER by pseudo`;
     mysqlCmd(getUsersQuery)
         .then(results => res.status(200).json({ results }) )
         .catch( error => res.status(500).json({ error }));
@@ -416,6 +416,30 @@ exports.revokeSuperUser = (req, res) => {
     }
     else res.status(500).json({ message: "Bad query error", code: "ER_BAD_QUE" });
 };
+exports.lockUser = (req, res) => {
+    if (req.body && req.body.id) {
+        if (req.decoded.rights == 'super') {
+            const blockUserQuery = `update user set locked=1 where userId=${req.body.id}`;
+            mysqlCmd(blockUserQuery)
+                .then(() => res.status(200).json({message: 'User successfully locked', code: 'SCS_USR_LOC'}))
+                .catch( error => res.status(500).json({ error }));
+        }
+        else return res.status(401).json({ message: "You are not authorize to do this action", code: "ER_FAK_USE" });
+    }
+    else res.status(500).json({ message: "Bad query error", code: "ER_BAD_QUE" });
+};
+exports.unlockUser = (req, res) => {
+    if (req.body && req.body.id) {
+        if (req.decoded.rights == 'super') {
+            const blockUserQuery = `update user set locked=0 where userId=${req.body.id}`;
+            mysqlCmd(blockUserQuery)
+                .then(() => res.status(200).json({message: 'User successfully unlocked', code: 'SCS_USR_ULC'}))
+                .catch( error => res.status(500).json({ error }));
+        }
+        else return res.status(401).json({ message: "You are not authorize to do this action", code: "ER_FAK_USE" });
+    }
+    else res.status(500).json({ message: "Bad query error", code: "ER_BAD_QUE" });
+};
 
 // delete controllers
 
@@ -475,6 +499,10 @@ exports.delNotif = (req, res) => {
         .catch( error => res.status(500).json({ error }));  
 };
 exports.delAccount = (req, res) => {
+
+    console.log(`req.query.id: ${req.query.id}`)
+    console.log(`req.decoded.userId: ${req.decoded.userId}`)
+
     if (req.query.id == req.decoded.userId) {
         const getPathImgsQuery = `select path from user left join publication on userId = authorId left join picture on pubId = whoId where userId = ${req.query.id}`;
         const delAccQuery = `delete user, publication, picture, comment, notif from user left join publication on userId=authorId left join picture on pubId=whoId left join comment on userId=writerId left join notif on userId=whereId where userId=${req.query.id}`;

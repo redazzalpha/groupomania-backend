@@ -13,6 +13,7 @@ ER_CHK_PASS: error check password
 ER_INV_IMG: error invalid data image
 ER_FAK_USE: error fake user, user doesn't match with request 
 ER_BAD_QUE: error bad query 
+ER_ACC_LOC: error account locked
 
 # SUCCESS
 
@@ -37,6 +38,8 @@ SCS_RIG_SUP: success modify rights to super
 SCS_RIG_BAS: success modify rights to basic
 SCS_RA_NTF: success read all notifs
 SCS_DA_NTF: success delete all notifs
+SCS_USR_LOC: success lock user
+SCS_USR_ULC: success unlock user
 
 # MYSQL
 

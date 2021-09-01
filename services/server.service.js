@@ -48,6 +48,7 @@ const services = {
                 notif: result.notif,
                 password: result.password,
                 rights: result.rights,
+                locked: result.locked,
             },
             process.env.SEC_SES,
             { expiresIn: process.env.SEC_SES_LIFE }

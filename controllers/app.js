@@ -60,21 +60,24 @@ exports.getNotif = (req, res) => {
         .catch( error => res.status(500).json({ error }));
 };
 exports.getUsers = (req, res) => {
-    const getUsersQuery = `select userId, pseudo, img, description, rights from user`;
+    const getUsersQuery = `select userId, pseudo, img, description, rights from user ORDER by pseudo`;
     mysqlCmd(getUsersQuery)
         .then(results => res.status(200).json({ results }) )
         .catch( error => res.status(500).json({ error }));
 };
 exports.pubScroll = (req, res) => {
-    const lpubid = req.query.lpubid.id;
-    const condition = lpubid != 0 ? `where pubId < ${lpubid}` : '';
-    const scrollQuerry = `select * from publication left join user on authorId=userId  ${condition}  ORDER BY time DESC limit 2`;
-    mysql.query(scrollQuerry, (error, results) => {
-
-        if (error)
-            return res.status(500).json({ error });
-        res.status(200).json({ results });
-    });
+    if (req.query && req.query.lpubid && req.query.lpubid.id) {
+        const lpubid = req.query.lpubid.id;
+        const condition = lpubid != 0 ? `where pubId < ${lpubid}` : '';
+        const scrollQuerry = `select * from publication left join user on authorId=userId  ${condition}  ORDER BY time DESC limit 2`;
+        mysql.query(scrollQuerry, (error, results) => {
+    
+            if (error)
+                return res.status(500).json({ error });
+            res.status(200).json({ results });
+        });
+    }
+    else res.status(500).json({ message: "Bad query error", code: "ER_BAD_QUE" });
 };
 
 // post controllers

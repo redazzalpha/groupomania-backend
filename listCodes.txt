@@ -12,6 +12,7 @@ ER_BEA_TKN: error verify token: Bearer not found
 ER_CHK_PASS: error check password
 ER_INV_IMG: error invalid data image
 ER_FAK_USE: error fake user, user doesn't match with request 
+ER_BAD_QUE: error bad query 
 
 # SUCCESS
 

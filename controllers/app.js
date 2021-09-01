@@ -37,7 +37,6 @@ exports.autoLog = (req, res) => {
 // get controllers
 
 exports.getPubs = (req, res) => {
-
     mysql.query(`select * from publication left join user on authorId=userId ORDER BY time DESC limit 2`, (error, results) => {
        if (error)
            return res.status(500).json({ error });
@@ -45,7 +44,6 @@ exports.getPubs = (req, res) => {
     });
 };
 exports.getComment = (req, res) => {
-
     mysql.query(`select * from comment left join publication on parentId=pubId left join user on writerId=userId order by comTime desc`, (error, results) => {
         if (error)
             return res.status(500).json({ error });
@@ -53,7 +51,6 @@ exports.getComment = (req, res) => {
     });
 };
 exports.getNotif = (req, res) => {
-
     const getNotifQuery = `select * from notif left join comment on fromId=comId left join user on writerId=userId left join publication on parentId = pubId order by comTime desc`;
     mysqlCmd(getNotifQuery)
         .then(results => res.status(200).json({ results }) )
@@ -66,24 +63,21 @@ exports.getUsers = (req, res) => {
         .catch( error => res.status(500).json({ error }));
 };
 exports.pubScroll = (req, res) => {
-    if (req.query && req.query.lpubid && req.query.lpubid.id) {
-        const lpubid = req.query.lpubid.id;
-        const condition = lpubid != 0 ? `where pubId < ${lpubid}` : '';
-        const scrollQuerry = `select * from publication left join user on authorId=userId  ${condition}  ORDER BY time DESC limit 2`;
-        mysql.query(scrollQuerry, (error, results) => {
-    
-            if (error)
-                return res.status(500).json({ error });
-            res.status(200).json({ results });
-        });
-    }
-    else res.status(500).json({ message: "Bad query error", code: "ER_BAD_QUE" });
+    const lpubid = req.query.lpubid.id;
+    const condition = lpubid != 0 ? `where pubId < ${lpubid}` : '';
+    const scrollQuerry = `select * from publication left join user on authorId=userId  ${condition}  ORDER BY time DESC limit 2`;
+    mysql.query(scrollQuerry, (error, results) => {
+
+        if (error)
+            return res.status(500).json({ error });
+        res.status(200).json({ results });
+    });
 };
 
 // post controllers
 
 exports.publish = (req, res) => {
-    if (services.isNotEmpty(req.body.publication)) {
+    if (req.body && services.isNotEmpty(req.body.publication)) {
         const authorId = req.decoded.userId;
         let text = req.body.publication;
         // dom will be used to recreate dom element for publications images
@@ -146,8 +140,7 @@ exports.publish = (req, res) => {
     else return res.status(401).json({ error: { message: "Publication is empty", code: "ER_EMP_PUB" } });
 };
 exports.comment = (req, res) => {
-
-    if (services.isNotEmpty(req.body.comment) && req.body.comText.length <= 255) {
+    if (req.body && services.isNotEmpty(req.body.comment) && req.body.comText.length <= 255) {
         const writerId = req.decoded.userId;
         const parentId = req.body.parentId;
         const comText = req.body.comText;
@@ -177,80 +170,91 @@ exports.comment = (req, res) => {
     else return res.status(401).json({ error: { message: "Comment is empty", code: "ER_EMP_COM" } });
 };
 exports.like = (req, res) => {
-
-    const getLikeQuery = `select postLike from publication where pubId=${req.body.data.pubId}`;
-    mysqlCmd(getLikeQuery)
-        .then(results => {
-            const updateLikeQuery = `update publication set postLike=${++results[0].postLike}, userIdLike="${JSON.stringify(req.body.data.userIdLike)}" where pubId=${req.body.data.pubId}`;
-            mysqlCmd(updateLikeQuery)
-                .then( (/*success*/) => res.status(200).json({ postLike: results[0].postLike }) )
-                .catch( error => res.status(400).json({ error }) );
-        })
-        .catch( error => res.status(400).json({ error }));
+    if (req.body && req.body.data && req.body.data.pubId) {
+        const getLikeQuery = `select postLike from publication where pubId=${req.body.data.pubId}`;
+        mysqlCmd(getLikeQuery)
+            .then(results => {
+                const updateLikeQuery = `update publication set postLike=${++results[0].postLike}, userIdLike="${JSON.stringify(req.body.data.userIdLike)}" where pubId=${req.body.data.pubId}`;
+                mysqlCmd(updateLikeQuery)
+                    .then( (/*success*/) => res.status(200).json({ postLike: results[0].postLike }) )
+                    .catch( error => res.status(400).json({ error }) );
+            })
+            .catch( error => res.status(400).json({ error }));
+    }
+    else res.status(500).json({ message: "Bad query error", code: "ER_BAD_QUE" });
 };
 exports.dislike = (req, res) => {
-    const getDislikeQuery = `select postDislike from publication where pubId=${req.body.data.pubId}`;
-    mysqlCmd(getDislikeQuery)
-        .then(results => {
-        const updateDislikeQuery = `update publication set postDislike=${++results[0].postDislike}, userIdDislike="${JSON.stringify(req.body.data.userIdDislike)}"where pubId=${req.body.data.pubId}`;
-            mysqlCmd(updateDislikeQuery)
-                .then( (/*success*/) => res.status(200).json({ postDislike: results[0].postDislike }) )
-                .catch( error => res.status(400).json({ error }) );
-        })
-        .catch( error => res.status(400).json({ error }) );
+    if (req.body && req.body.data && req.body.data.pubId) {
+        const getDislikeQuery = `select postDislike from publication where pubId=${req.body.data.pubId}`;
+        mysqlCmd(getDislikeQuery)
+            .then(results => {
+            const updateDislikeQuery = `update publication set postDislike=${++results[0].postDislike}, userIdDislike="${JSON.stringify(req.body.data.userIdDislike)}"where pubId=${req.body.data.pubId}`;
+                mysqlCmd(updateDislikeQuery)
+                    .then( (/*success*/) => res.status(200).json({ postDislike: results[0].postDislike }) )
+                    .catch( error => res.status(400).json({ error }) );
+            })
+            .catch( error => res.status(400).json({ error }) );
+    }
+    else res.status(500).json({ message: "Bad query error", code: "ER_BAD_QUE" });
 };
 exports.unlike = (req, res) => {
-    const getLikeQuery = `select postLike from publication where pubId=${req.body.data.pubId}`;
-    mysqlCmd(getLikeQuery)
-        .then(results => {
-            const updateLikeQuery = `update publication set postLike=${--results[0].postLike}, userIdLike="${JSON.stringify(req.body.data.userIdLike)}" where pubId=${req.body.data.pubId}`;
-            mysqlCmd(updateLikeQuery)
-                .then( (/*success*/) => res.status(200).json({ postLike: results[0].postLike }) )
-                .catch( error => res.status(400).json({ error }) );
-        })
-        .catch( error => res.status(400).json({ error }) );
+    if (req.body && req.body.data && req.body.data.pubId) {
+        const getLikeQuery = `select postLike from publication where pubId=${req.body.data.pubId}`;
+        mysqlCmd(getLikeQuery)
+            .then(results => {
+                const updateLikeQuery = `update publication set postLike=${--results[0].postLike}, userIdLike="${JSON.stringify(req.body.data.userIdLike)}" where pubId=${req.body.data.pubId}`;
+                mysqlCmd(updateLikeQuery)
+                    .then( (/*success*/) => res.status(200).json({ postLike: results[0].postLike }) )
+                    .catch( error => res.status(400).json({ error }) );
+            })
+            .catch( error => res.status(400).json({ error }) );
+    }
 };
 exports.undislike = (req, res) => {
-    const getDislikeQuery = `select postDislike from publication where pubId=${req.body.data.pubId}`;
-    mysqlCmd(getDislikeQuery)
-        .then(results => {
-            const updateDislikeQuery = `update publication set postDislike=${--results[0].postDislike}, userIdDislike="${JSON.stringify(req.body.data.userIdDislike)}" where pubId=${req.body.data.pubId}`;
-            mysqlCmd(updateDislikeQuery)
-                .then((/*success*/) => res.status(200).json({ postDislike: results[0].postDislike }) )
-                .catch(error => res.status(400).json({ error }) );
-        })
-        .catch( error => res.status(400).json({ error }) );
+    if (req.body && req.body.data && req.body.data.pubId) {
+        const getDislikeQuery = `select postDislike from publication where pubId=${req.body.data.pubId}`;
+        mysqlCmd(getDislikeQuery)
+            .then(results => {
+                const updateDislikeQuery = `update publication set postDislike=${--results[0].postDislike}, userIdDislike="${JSON.stringify(req.body.data.userIdDislike)}" where pubId=${req.body.data.pubId}`;
+                mysqlCmd(updateDislikeQuery)
+                    .then((/*success*/) => res.status(200).json({ postDislike: results[0].postDislike }) )
+                    .catch(error => res.status(400).json({ error }) );
+            })
+            .catch( error => res.status(400).json({ error }) );
+    }
+    else res.status(500).json({ message: "Bad query error", code: "ER_BAD_QUE" });
 };
 exports.uptProfImg = (req, res) => {
+    if (req.file) {
+        const imgUrl = `${req.protocol}://${req.headers.host}/img/${req.file.filename}`;
+        const updateUserQuery = `update user set img="${imgUrl}" where userId="${req.decoded.userId}"`;
+        const getUserQuery = `select * from user where email="${req.decoded.email}"`;
 
-    const imgUrl = `${req.protocol}://${req.headers.host}/img/${req.file.filename}`;
-    const updateUserQuery = `update user set img="${imgUrl}" where userId="${req.decoded.userId}"`;
-    const getUserQuery = `select * from user where email="${req.decoded.email}"`;
-
-    // update user publication and comment tables
-    // with user img input
-    mysqlCmd(updateUserQuery)
-        .then(() => {
-            // get user info and refresh token
-            mysqlCmd(getUserQuery)
-                .then(results => {
-                    const data = {
-                        token: services.generateTkn(results[0]),
-                        imgUrl
-                    };
-                    if (req.decoded.img != null) {
-                        const file = `img/${req.decoded.img.split("img/")[1]}`;
-                        fs.unlink(file, () => {});
-                    }
-                    res.status(200).json({ data });                                            
-                })
-                .catch( error => res.status(500).json({ error }) );
-        })
-        .catch( error => res.status(500).json({ error })) ;
+        // update user publication and comment tables
+        // with user img input
+        mysqlCmd(updateUserQuery)
+            .then(() => {
+                // get user info and refresh token
+                mysqlCmd(getUserQuery)
+                    .then(results => {
+                        const data = {
+                            token: services.generateTkn(results[0]),
+                            imgUrl
+                        };
+                        if (req.decoded.img) {
+                            const file = `img/${req.decoded.img.split("img/")[1]}`;
+                            fs.unlink(file, () => {});
+                        }
+                        res.status(200).json({ data });                                            
+                    })
+                    .catch( error => res.status(500).json({ error }) );
+            })
+            .catch( error => res.status(500).json({ error })) ;
+    }
+    else res.status(500).json({ message: "Bad query error", code: "ER_BAD_QUE" });
 };
 exports.token = (req, res) => {
-
-    if (req.body && req.body.tokenRfrsh != null && req.body.tokenRfrsh != undefined) {
+    if (req.body && req.body.tokenRfrsh && req.body.tokenRfrsh) {
         // check token signature and validity 
         const tokenRfrsh = req.body.tokenRfrsh;
         jwt.verify(tokenRfrsh, process.env.SEC_SES_REFRESH, (error, decoded) => {
@@ -275,10 +279,9 @@ exports.token = (req, res) => {
 // patch controllers
 
 exports.uptProfDesc = (req, res) => {
-
     // Empty string is authorized 
     // to delete previous description
-    if (req.body.desc.length <= 255) {
+    if (req.body && req.body.desc && req.body.desc.length <= 255) {
         const updateUserQuery = `update user set description="${req.body.desc}" where userId="${req.decoded.userId}"`;
         const getUserQuery = `select * from user where email="${req.decoded.email}"`;
         mysqlCmd(updateUserQuery)
@@ -294,119 +297,129 @@ exports.uptProfDesc = (req, res) => {
             })
             .catch( error => res.status(500).json({ error }) );
     }
+    else res.status(500).json({ message: "Bad query error", code: "ER_BAD_QUE" });
 };
 exports.uptProfPasswd = (req, res) => {
-    const getHashPasswdQuery = `select password from user where userId=${req.decoded.userId} `;
-    mysqlCmd(getHashPasswdQuery)
-        .then(results => {
-            const hash = results[0].password;
-            bcrypt.compare(req.body.old, hash, (error, ready) => {
-                if (error)
-                    return res.status(500).json({ error });
-                if (!ready)
-                    return res.status(401).json({ message: "Password does not match", code: "ER_CHK_PASS" });
-                // generate salt for password encryption
-                bcrypt.genSalt(10, (error, salt) => {
+    if (req.body && req.body.old && req.body.new) {
+        const getHashPasswdQuery = `select password from user where userId=${req.decoded.userId} `;
+        mysqlCmd(getHashPasswdQuery)
+            .then(results => {
+                const hash = results[0].password;
+                bcrypt.compare(req.body.old, hash, (error, ready) => {
                     if (error)
                         return res.status(500).json({ error });
-                    // generate hash from request  password
-                    bcrypt.hash(req.body.new, salt, (error, hash) => {
+                    if (!ready)
+                        return res.status(401).json({ message: "Password does not match", code: "ER_CHK_PASS" });
+                    // generate salt for password encryption
+                    bcrypt.genSalt(10, (error, salt) => {
                         if (error)
                             return res.status(500).json({ error });
-                        const modifyPasswdQuery = `update user set password="${hash}" where userId=${req.decoded.userId}`;
-                        mysqlCmd(modifyPasswdQuery)
-                            .then( () => res.status(200).json({ message: "Password modified successfully", code: "SCS_MDF_PASS" }) )
-                            .catch( error => res.status(500).json({ error }) );
-                    });
-                });    
-            });
-        })
-        .catch(error => res.status(500).json({text: error }) );
+                        // generate hash from request  password
+                        bcrypt.hash(req.body.new, salt, (error, hash) => {
+                            if (error)
+                                return res.status(500).json({ error });
+                            const modifyPasswdQuery = `update user set password="${hash}" where userId=${req.decoded.userId}`;
+                            mysqlCmd(modifyPasswdQuery)
+                                .then( () => res.status(200).json({ message: "Password modified successfully", code: "SCS_MDF_PASS" }) )
+                                .catch( error => res.status(500).json({ error }) );
+                        });
+                    });    
+                });
+            })
+            .catch(error => res.status(500).json({text: error }) );
+    }
+    else res.status(500).json({ message: "Bad query error", code: "ER_BAD_QUE" });
 };
 exports.readNotif = (req, res) => {
-
-    const getWhereIdQuery = ` select whereId from notif where notifId=${req.body.notifId}`;
-    mysqlCmd(getWhereIdQuery)
-        .then(results => {
-            if (results[0].whereId == req.decoded.userId) {
-                const updateNotifQuery = `update notif set state="read" where notifId=${req.body.notifId}`;
-                mysqlCmd(updateNotifQuery)
-                    .then((/*results*/) => res.status(200).json({ message: "notification read", code: "SCS_REA_NOT" }))
-                    .catch(error => res.status(500).json({ error }));
-            }
-            else res.status(401).json({ message: "You are not authorize to do this action", code: "ER_FAK_USE" });
-        })
-        .catch( error => res.status(500).json({ error }));
+    if (req.body && req.body.notifId) {
+        const getWhereIdQuery = ` select whereId from notif where notifId=${req.body.notifId}`;
+        mysqlCmd(getWhereIdQuery)
+            .then(results => {
+                if (results[0].whereId == req.decoded.userId) {
+                    const updateNotifQuery = `update notif set state="read" where notifId=${req.body.notifId}`;
+                    mysqlCmd(updateNotifQuery)
+                        .then((/*results*/) => res.status(200).json({ message: "notification read", code: "SCS_REA_NOT" }))
+                        .catch(error => res.status(500).json({ error }));
+                }
+                else res.status(401).json({ message: "You are not authorize to do this action", code: "ER_FAK_USE" });
+            })
+            .catch( error => res.status(500).json({ error }));
+    }
+    else res.status(500).json({ message: "Bad query error", code: "ER_BAD_QUE" });
 };
 exports.readAll = async (req, res) => {
+    if (req.body && req.body.notifId) {
+        const getWhereIdQuery = ` select whereId from notif where notifId=${req.body.notifId}`;
+        mysqlCmd(getWhereIdQuery)
+            .then(results => {
+                if (results[0].whereId == req.decoded.userId) {
+                    const readNotifQuery = `update notif set state="read" where whereId=${req.decoded.userId}`;
+                    mysqlCmd(readNotifQuery)
+                        .then( () => res.status(200).json({ message: "All notifs state read successfully", code: "SCS_RA_NTF" }))
+                        .catch( error => res.status(500).json({ error }));
+                }
+                else res.status(401).json({ message: "You are not authorize to do this action", code: "ER_FAK_USE" });
+            })
+            .catch( error => res.status(500).json({ error }));
+    }
+    else res.status(500).json({ message: "Bad query error", code: "ER_BAD_QUE" });
 
-
-    const getWhereIdQuery = ` select whereId from notif where notifId=${req.body.notifId}`;
-    mysqlCmd(getWhereIdQuery)
-        .then(results => {
-            if (results[0].whereId == req.decoded.userId) {
-                const readNotifQuery = `update notif set state="read" where whereId=${req.decoded.userId}`;
-                mysqlCmd(readNotifQuery)
-                    .then( () => res.status(200).json({ message: "All notifs state read successfully", code: "SCS_RA_NTF" }))
-                    .catch( error => res.status(500).json({ error }));
-            }
-            else res.status(401).json({ message: "You are not authorize to do this action", code: "ER_FAK_USE" });
-        })
-        .catch( error => res.status(500).json({ error }));
 };
 exports.deleteAll = (req, res) => {
-
-    const getWhereIdQuery = ` select whereId from notif where notifId=${req.body.notifId}`;
-    mysqlCmd(getWhereIdQuery)
-        .then(results => {
-            if (results[0].whereId == req.decoded.userId) {
-                const delNotifQuery = `delete from notif where whereId=${req.decoded.userId}`;
-                mysqlCmd(delNotifQuery)
-                    .then( () => res.status(200).json({ message: "All notifs has been deleted successfully", code: "SCS_DA_NTF" }))
-                    .catch( error => res.status(500).json({ error }));
-            }
-            else res.status(401).json({ message: "You are not authorize to do this action", code: "ER_FAK_USE" });
-        })
-        .catch( error => res.status(500).json({ error }));
-
-
-
+    if (req.body && req.body.notifId) {
+        const getWhereIdQuery = ` select whereId from notif where notifId=${req.body.notifId}`;
+        mysqlCmd(getWhereIdQuery)
+            .then(results => {
+                if (results[0].whereId == req.decoded.userId) {
+                    const delNotifQuery = `delete from notif where whereId=${req.decoded.userId}`;
+                    mysqlCmd(delNotifQuery)
+                        .then( () => res.status(200).json({ message: "All notifs has been deleted successfully", code: "SCS_DA_NTF" }))
+                        .catch( error => res.status(500).json({ error }));
+                }
+                else res.status(401).json({ message: "You are not authorize to do this action", code: "ER_FAK_USE" });
+            })
+            .catch( error => res.status(500).json({ error }));
+    }
+    else res.status(500).json({ message: "Bad query error", code: "ER_BAD_QUE" });
 };
 exports.superUser = (req, res) => {
-
-    const getRightsQuery = ` select rights from user where userId=${req.decoded.userId}`;
-    mysqlCmd(getRightsQuery)
-        .then(results => {
-            if (results[0].rights == 'super') {
-                const superUserQuery = `update user set rights="super" where userId=${req.body.id}`;
-                mysqlCmd(superUserQuery)
-                    .then( () => res.status(200).json({message: "User has been set to super user successfully", code: "SCS_RIG_SUP"}))
-                    .catch( error => res.status(500).json({ error }));
-            }
-            else res.status(401).json({ message: "You are not authorize to do this action", code: "ER_FAK_USE" });
-        })
-        .catch( error => res.status(500).json({ error }));
+    if (req.body && req.body.id) {
+        const getRightsQuery = ` select rights from user where userId=${req.decoded.userId}`;
+        mysqlCmd(getRightsQuery)
+            .then(results => {
+                if (results[0].rights == 'super') {
+                    const superUserQuery = `update user set rights="super" where userId=${req.body.id}`;
+                    mysqlCmd(superUserQuery)
+                        .then( () => res.status(200).json({message: "User has been set to super user successfully", code: "SCS_RIG_SUP"}))
+                        .catch( error => res.status(500).json({ error }));
+                }
+                else res.status(401).json({ message: "You are not authorize to do this action", code: "ER_FAK_USE" });
+            })
+            .catch( error => res.status(500).json({ error }));
+    }
+    else res.status(500).json({ message: "Bad query error", code: "ER_BAD_QUE" });
 };
 exports.revokeSuperUser = (req, res) => {
-
-    const getRightsQuery = ` select rights from user where userId=${req.decoded.userId}`;
-    mysqlCmd(getRightsQuery)
-        .then(results => {
-            if (results[0].rights == 'super') {
-                const superUserQuery = `update user set rights="basic" where userId=${req.body.id}`;
-                mysqlCmd(superUserQuery)
-                    .then( () => res.status(200).json({message: "User has been set to basic user successfully", code: "SCS_RIG_BAS"}))
-                    .catch( error => res.status(500).json({ error }));
-            }
-            else res.status(401).json({ message: "You are not authorize to do this action", code: "ER_FAK_USE" });
-        })
-        .catch( error => res.status(500).json({ error }));
+    if (req.body && req.body.id) {
+        const getRightsQuery = ` select rights from user where userId=${req.decoded.userId}`;
+        mysqlCmd(getRightsQuery)
+            .then(results => {
+                if (results[0].rights == 'super') {
+                    const superUserQuery = `update user set rights="basic" where userId=${req.body.id}`;
+                    mysqlCmd(superUserQuery)
+                        .then( () => res.status(200).json({message: "User has been set to basic user successfully", code: "SCS_RIG_BAS"}))
+                        .catch( error => res.status(500).json({ error }));
+                }
+                else res.status(401).json({ message: "You are not authorize to do this action", code: "ER_FAK_USE" });
+            })
+            .catch( error => res.status(500).json({ error }));
+    }
+    else res.status(500).json({ message: "Bad query error", code: "ER_BAD_QUE" });
 };
 
 // delete controllers
 
 exports.delPublication = (req, res) => {
-
     const getAuthorIdQuery = `select authorId from publication where pubId=${req.query.pubId}`;
     mysqlCmd(getAuthorIdQuery)
         .then(results => {
@@ -432,10 +445,8 @@ exports.delPublication = (req, res) => {
             else res.status(401).json({ message: "You are not authorize to do this action", code: "ER_FAK_USE" });
         })
         .catch( error => res.status(500).json({ error }));
-
 };
 exports.delComment = (req, res) => {
-
     const getWhereIdQuery = `select writerId from comment where comId=${req.query.comId}`;
     mysqlCmd(getWhereIdQuery)
         .then(results => {
@@ -450,7 +461,6 @@ exports.delComment = (req, res) => {
         .catch( error => res.status(500).json({ error }));
 };
 exports.delNotif = (req, res) => {
-
     const getWhereIdQuery = `select whereId from notif where notifId=${req.query.notifId}`;
     mysqlCmd(getWhereIdQuery)
         .then(results => {
@@ -465,7 +475,6 @@ exports.delNotif = (req, res) => {
         .catch( error => res.status(500).json({ error }));  
 };
 exports.delAccount = (req, res) => {
-
     if (req.query.id == req.decoded.userId) {
         const getPathImgsQuery = `select path from user left join publication on userId = authorId left join picture on pubId = whoId where userId = ${req.query.id}`;
         const delAccQuery = `delete user, publication, picture, comment, notif from user left join publication on userId=authorId left join picture on pubId=whoId left join comment on userId=writerId left join notif on userId=whereId where userId=${req.query.id}`;

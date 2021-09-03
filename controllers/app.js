@@ -499,10 +499,6 @@ exports.delNotif = (req, res) => {
         .catch( error => res.status(500).json({ error }));  
 };
 exports.delAccount = (req, res) => {
-
-    console.log(`req.query.id: ${req.query.id}`)
-    console.log(`req.decoded.userId: ${req.decoded.userId}`)
-
     if (req.query.id == req.decoded.userId) {
         const getPathImgsQuery = `select path from user left join publication on userId = authorId left join picture on pubId = whoId where userId = ${req.query.id}`;
         const delAccQuery = `delete user, publication, picture, comment, notif from user left join publication on userId=authorId left join picture on pubId=whoId left join comment on userId=writerId left join notif on userId=whereId where userId=${req.query.id}`;

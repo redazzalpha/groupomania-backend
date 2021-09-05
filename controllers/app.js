@@ -158,10 +158,10 @@ exports.comment = (req, res) => {
                             const fromId = results[0]["last_insert_id()"];
                             const insertNotifQuery = `insert into notif (fromId, whereId, state) values (${fromId}, ${whereId}, "unread")`;
                             mysqlCmd(insertNotifQuery)
-                                .then(() => res.status(200).json({ message: "success" }))
+                                .then( res.status(200).json({ message: "Notification created successfully", code: 'SCS_CRE_NOT' }) )
                                 .catch(error => res.status(500).json({ error }));
                         }
-                        else res.status(200).json({ message: "success" });
+                        else res.status(200).json({ message: "Server success action", code: 'SCS_ON_SER' });
                     })
                     .catch();
             })
@@ -250,6 +250,15 @@ exports.uptProfImg = (req, res) => {
                     .catch( error => res.status(500).json({ error }) );
             })
             .catch( error => res.status(500).json({ error })) ;
+    }
+    else res.status(500).json({ message: "Bad query error", code: "ER_BAD_QUE" });
+};
+exports.profMode = (req, res) => {
+    if (req.body && (req.body.dark == 0 || req.body.dark == 1)) {
+        const setModeQuery = `update user set dark=${req.body.dark} where userId=${req.decoded.userId}`;
+        mysqlCmd(setModeQuery)
+            .then(() => res.status(200).json({ message: "Mode set successfully", code: 'SCS_SET_MOD' }) )
+            .catch(error => res.status(500).json({ error }));
     }
     else res.status(500).json({ message: "Bad query error", code: "ER_BAD_QUE" });
 };

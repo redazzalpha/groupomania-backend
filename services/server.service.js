@@ -49,6 +49,7 @@ const services = {
                 password: result.password,
                 rights: result.rights,
                 locked: result.locked,
+                dark: result.dark,
             },
             process.env.SEC_SES,
             { expiresIn: process.env.SEC_SES_LIFE }

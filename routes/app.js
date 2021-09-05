@@ -23,6 +23,7 @@ router.post("/publish/dislike", auth, appCtrl.dislike);
 router.post("/publish/unlike", auth, appCtrl.unlike);
 router.post("/publish/undislike", auth, appCtrl.undislike);
 router.post("/profil/img", auth, multer, appCtrl.uptProfImg);
+router.post("/profil/mode", auth, multer, appCtrl.profMode);
 router.post("/token", appCtrl.token);
 
 router.patch("/profil/description", auth, appCtrl.uptProfDesc);

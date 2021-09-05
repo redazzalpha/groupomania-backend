@@ -40,6 +40,9 @@ SCS_RA_NTF: success read all notifs
 SCS_DA_NTF: success delete all notifs
 SCS_USR_LOC: success lock user
 SCS_USR_ULC: success unlock user
+SCS_ON_SER: success on server action
+SCS_CRE_NOT: success on notification creation
+SCS_SET_MOD: success on mode setting
 
 # MYSQL
 

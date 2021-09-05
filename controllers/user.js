@@ -41,16 +41,15 @@ exports.login = (req, res) => {
 exports.register = (req, res) => {
 
     if (req.body && req.body.pseudo && req.body.email && req.body.password) {
-        const fields = {
-            pseudo: req.body.pseudo,
-            email: req.body.email,
-            password: req.body.password,
-            rights: "basic",
-            locked: 0,
-        };
+        const pseudo = req.body.pseudo;
+        const email = req.body.email;
+        const password = req.body.password;
+        const rights = "basic";
+        const dark = 0;
+        const locked = 0;
     
         // check user inputs
-        if (services.checkField(fields.pseudo) && services.checkEmail(fields.email) && services.checkPasswd(fields.password)) {
+        if (services.checkField(pseudo) && services.checkEmail(email) && services.checkPasswd(password)) {
     
             // generate salt for password encryption
             bcrypt.genSalt(10, (error, salt) => {
@@ -59,13 +58,13 @@ exports.register = (req, res) => {
                     return res.status(500).json({ error });
                 
                 // generate hash from request  password
-                bcrypt.hash(fields.password, salt, (error, hash) => {
+                bcrypt.hash(password, salt, (error, hash) => {
     
                     if (error)
                         return res.status(500).json({ error });
                     
                     // create new user, replace clear password by hash and save it 
-                    mysql.query(`insert into user (pseudo, email, password, rights, locked) values ("${fields.pseudo}", "${fields.email}", "${hash}", "${fields.rights}", "${fields.locked}") `, (error) => {
+                    mysql.query(`insert into user (pseudo, email, password, rights, locked, dark) values ("${pseudo}", "${email}", "${hash}", "${rights}", ${locked}, ${dark}) `, (error) => {
     
                         if (error)
                             return res.status(500).json({ error });                    

@@ -37,21 +37,29 @@ exports.autoLog = (req, res) => {
 // get controllers
 
 exports.getPubs = (req, res) => {
-    mysql.query(`select * from publication left join user on authorId=userId ORDER BY time DESC limit 2`, (error, results) => {
+    mysql.query(`select publication.*, user.userId, user.pseudo, user.img from publication left join user on authorId=userId ORDER BY time DESC limit 2`, (error, results) => {
+       if (error)
+           return res.status(500).json({ error });
+       res.status(200).json({ results });
+    });
+};
+exports.getUserPubs = (req, res) => {
+
+    mysql.query(`select img, publication.* from user left join publication on userId=authorId where userId=${req.query.id} ORDER BY time DESC`, (error, results) => {
        if (error)
            return res.status(500).json({ error });
        res.status(200).json({ results });
     });
 };
 exports.getComment = (req, res) => {
-    mysql.query(`select * from comment left join publication on parentId=pubId left join user on writerId=userId order by comTime desc`, (error, results) => {
+    mysql.query(`select comment.*, publication.*, user.userId, user.pseudo, user.img from comment left join publication on parentId=pubId left join user on writerId=userId order by comTime desc`, (error, results) => {
         if (error)
             return res.status(500).json({ error });
         res.status(200).json({ results });
     });
 };
 exports.getNotif = (req, res) => {
-    const getNotifQuery = `select * from notif left join comment on fromId=comId left join user on writerId=userId left join publication on parentId = pubId order by comTime desc`;
+    const getNotifQuery = `select comment.*, user.userId, user.pseudo, user.img, publication.* from notif left join comment on fromId=comId left join user on writerId=userId left join publication on parentId = pubId order by comTime desc`;
     mysqlCmd(getNotifQuery)
         .then(results => res.status(200).json({ results }) )
         .catch( error => res.status(500).json({ error }));
@@ -65,7 +73,7 @@ exports.getUsers = (req, res) => {
 exports.pubScroll = (req, res) => {
     const lpubid = req.query.lpubid.id;
     const condition = lpubid != 0 ? `where pubId < ${lpubid}` : '';
-    const scrollQuerry = `select * from publication left join user on authorId=userId  ${condition}  ORDER BY time DESC limit 2`;
+    const scrollQuerry = `select publication.*, user.userId, user.pseudo, user.img from publication left join user on authorId=userId  ${condition}  ORDER BY time DESC limit 2`;
     mysql.query(scrollQuerry, (error, results) => {
 
         if (error)

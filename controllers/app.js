@@ -70,14 +70,14 @@ exports.pubScroll = (req, res) => {
     });
 };
 exports.getComment = (req, res) => {
-    mysql.query(`select comment.*, publication.*, user.userId, user.pseudo, user.img from comment left join publication on parentId=pubId left join user on writerId=userId order by comTime desc`, (error, results) => {
+    mysql.query(`select comment.*, publication.*, user.userId, user.pseudo, user.img, user.rights from comment left join publication on parentId=pubId left join user on writerId=userId order by comTime desc`, (error, results) => {
         if (error)
             return res.status(500).json({ error });
         res.status(200).json({ results });
     });
 };
 exports.getNotif = (req, res) => {
-    const getNotifQuery = `select comment.*, user.userId, user.pseudo, user.img, publication.*, notif.* from notif left join comment on fromId=comId left join user on writerId=userId left join publication on parentId = pubId order by comTime desc`;
+    const getNotifQuery = `select comment.*, user.userId, user.pseudo, user.img, user.rights, publication.*, notif.* from notif left join comment on fromId=comId left join user on writerId=userId left join publication on parentId = pubId order by comTime desc`;
     mysqlCmd(getNotifQuery)
         .then(results => res.status(200).json({ results }) )
         .catch( error => res.status(500).json({ error }));

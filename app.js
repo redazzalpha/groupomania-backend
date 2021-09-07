@@ -17,7 +17,7 @@ app.use(helmet());
 app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Headers", "X-Requested-With, Content, Content-Type, Origin, Authorization, Origin, Accept");
-    res.setHeader("Access-Control-Allow-Methods", "PATCH, GET, PUT, POST, DELETE, OPTIONS");
+    res.setHeader("Access-Control-Allow-Methods", "PATCH, GET, PUT, POST, DELETE, OPTIONS", "HEAD");
     next();
 });
 

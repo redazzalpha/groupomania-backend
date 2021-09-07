@@ -19,25 +19,25 @@ function mysqlCmd(query) {
 // head controllers
 
 exports.accessHome = (req, res) => {
-    res.status(200).json({ message: "Home authorized access", code: "SCS_ACC_HOM"});
+    res.status(200).send();
 };
 exports.accessProfil = (req, res) => {
-    res.status(200).json({ message: "Profil authorized access", code: "SCS_ACC_PROF" });
+    res.status(200).send();
 };
 exports.accessNotif = (req, res) => {
-    res.status(200).json({ message: "Notification authorized access", code: "SCS_ACC_NOT" });
+    res.status(200).send();
 };
 exports.accessTeam = (req, res) => {
-    res.status(200).json({ message: "Team authorized access", code: "SCS_ACC_TEA" });
+    res.status(200).send();
 };
 exports.autoLog = (req, res) => {
-    res.status(200).json({ message: "Auto authorized access", code: "SCS_AUT_LOG" });
+    res.status(200).send();
 };
 
 // get controllers
 
 exports.getPubs = (req, res) => {
-    mysql.query(`select publication.*, user.userId, user.pseudo, user.img from publication left join user on authorId=userId ORDER BY time DESC limit 2`, (error, results) => {
+    mysql.query(`select publication.*, user.userId, user.pseudo, user.img from publication left join user on authorId=userId ORDER BY time DESC limit ${req.query.limit}`, (error, results) => {
        if (error)
            return res.status(500).json({ error });
        res.status(200).json({ results });
@@ -45,30 +45,18 @@ exports.getPubs = (req, res) => {
 };
 exports.getUserPubs = (req, res) => {
 
-    mysql.query(`select img, publication.* from user left join publication on userId=authorId where userId=${req.query.id} ORDER BY time DESC`, (error, results) => {
+    mysql.query(`select userId,     img, publication.* from user left join publication on userId=authorId where userId=${req.query.id} ORDER BY time DESC`, (error, results) => {
        if (error)
            return res.status(500).json({ error });
        res.status(200).json({ results });
     });
 };
-exports.getComment = (req, res) => {
-    mysql.query(`select comment.*, publication.*, user.userId, user.pseudo, user.img from comment left join publication on parentId=pubId left join user on writerId=userId order by comTime desc`, (error, results) => {
+exports.pubsCount = (req, res) => {
+    mysql.query(`select count(*) from publication`, (error, results) => {
         if (error)
             return res.status(500).json({ error });
         res.status(200).json({ results });
-    });
-};
-exports.getNotif = (req, res) => {
-    const getNotifQuery = `select comment.*, user.userId, user.pseudo, user.img, publication.* from notif left join comment on fromId=comId left join user on writerId=userId left join publication on parentId = pubId order by comTime desc`;
-    mysqlCmd(getNotifQuery)
-        .then(results => res.status(200).json({ results }) )
-        .catch( error => res.status(500).json({ error }));
-};
-exports.getUsers = (req, res) => {
-    const getUsersQuery = `select userId, pseudo, img, description, rights, locked from user ORDER by pseudo`;
-    mysqlCmd(getUsersQuery)
-        .then(results => res.status(200).json({ results }) )
-        .catch( error => res.status(500).json({ error }));
+     }); 
 };
 exports.pubScroll = (req, res) => {
     const lpubid = req.query.lpubid.id;
@@ -80,6 +68,25 @@ exports.pubScroll = (req, res) => {
             return res.status(500).json({ error });
         res.status(200).json({ results });
     });
+};
+exports.getComment = (req, res) => {
+    mysql.query(`select comment.*, publication.*, user.userId, user.pseudo, user.img from comment left join publication on parentId=pubId left join user on writerId=userId order by comTime desc`, (error, results) => {
+        if (error)
+            return res.status(500).json({ error });
+        res.status(200).json({ results });
+    });
+};
+exports.getNotif = (req, res) => {
+    const getNotifQuery = `select comment.*, user.userId, user.pseudo, user.img, publication.*, notif.* from notif left join comment on fromId=comId left join user on writerId=userId left join publication on parentId = pubId order by comTime desc`;
+    mysqlCmd(getNotifQuery)
+        .then(results => res.status(200).json({ results }) )
+        .catch( error => res.status(500).json({ error }));
+};
+exports.getUsers = (req, res) => {
+    const getUsersQuery = `select userId, pseudo, img, description, rights, locked from user ORDER by pseudo`;
+    mysqlCmd(getUsersQuery)
+        .then(results => res.status(200).json({ results }) )
+        .catch( error => res.status(500).json({ error }));
 };
 
 // post controllers
@@ -298,7 +305,7 @@ exports.token = (req, res) => {
 exports.uptProfDesc = (req, res) => {
     // Empty string is authorized 
     // to delete previous description
-    if (req.body && req.body.desc && req.body.desc.length <= 255) {
+    if (req.body && (req.body.desc || req.body.desc == "") && req.body.desc.length <= 255) {
         const updateUserQuery = `update user set description="${req.body.desc}" where userId="${req.decoded.userId}"`;
         const getUserQuery = `select * from user where email="${req.decoded.email}"`;
         mysqlCmd(updateUserQuery)

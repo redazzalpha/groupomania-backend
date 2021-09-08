@@ -65,7 +65,7 @@ exports.pubScroll = (req, res) => {
 };
 exports.userPubScroll = (req, res) => {
     const lpubid = req.query.lpubid.id;
-    const condition = lpubid != 0 ? `where pubId < ${lpubid}` : '';
+    const condition = lpubid != 0 ? `where pubId < ${lpubid} and userId=${req.query.id}` : '';
     const userScrollQuery = `select user.userId, user.img, publication.* from user left join publication on userId=authorId ${condition} ORDER BY time DESC limit 2`;
     mysql.query(userScrollQuery, (error, results) => {
         if (error)

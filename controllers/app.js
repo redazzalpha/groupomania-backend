@@ -37,19 +37,41 @@ exports.autoLog = (req, res) => {
 // get controllers
 
 exports.getPubs = (req, res) => {
-    mysql.query(`select publication.*, user.userId, user.pseudo, user.img from publication left join user on authorId=userId ORDER BY time DESC limit ${req.query.limit}`, (error, results) => {
+    const getPubsQuery = `select publication.*, user.userId, user.pseudo, user.img from publication left join user on authorId=userId ORDER BY time DESC limit ${req.query.limit}`;
+    mysql.query(getPubsQuery, (error, results) => {
        if (error)
            return res.status(500).json({ error });
        res.status(200).json({ results });
     });
 };
 exports.getUserPubs = (req, res) => {
-
-    mysql.query(`select userId,     img, publication.* from user left join publication on userId=authorId where userId=${req.query.id} ORDER BY time DESC`, (error, results) => {
+    const getUserPubsQuery = `select userId, img, publication.* from user left join publication on userId=authorId where userId=${req.query.id} ORDER BY time DESC limit ${req.query.limit}`;
+    mysql.query(getUserPubsQuery, (error, results) => {
        if (error)
            return res.status(500).json({ error });
        res.status(200).json({ results });
     });
+};
+exports.pubScroll = (req, res) => {
+    const lpubid = req.query.lpubid.id;
+    const condition = lpubid != 0 ? `where pubId < ${lpubid}` : '';
+    const scrollQuery = `select publication.*, user.userId, user.pseudo, user.img from publication left join user on authorId=userId  ${condition}  ORDER BY time DESC limit 2`;
+    mysql.query(scrollQuery, (error, results) => {
+
+        if (error)
+            return res.status(500).json({ error });
+        res.status(200).json({ results });
+    });
+};
+exports.userPubScroll = (req, res) => {
+    const lpubid = req.query.lpubid.id;
+    const condition = lpubid != 0 ? `where pubId < ${lpubid}` : '';
+    const userScrollQuery = `select user.userId, user.img, publication.* from user left join publication on userId=authorId ${condition} ORDER BY time DESC limit 2`;
+    mysql.query(userScrollQuery, (error, results) => {
+        if (error)
+            return res.status(500).json({ error });
+        res.status(200).json({ results });
+     });
 };
 exports.pubsCount = (req, res) => {
     mysql.query(`select count(*) from publication`, (error, results) => {
@@ -58,16 +80,12 @@ exports.pubsCount = (req, res) => {
         res.status(200).json({ results });
      }); 
 };
-exports.pubScroll = (req, res) => {
-    const lpubid = req.query.lpubid.id;
-    const condition = lpubid != 0 ? `where pubId < ${lpubid}` : '';
-    const scrollQuerry = `select publication.*, user.userId, user.pseudo, user.img from publication left join user on authorId=userId  ${condition}  ORDER BY time DESC limit 2`;
-    mysql.query(scrollQuerry, (error, results) => {
-
+exports.userPubsCount = (req, res) => {
+    mysql.query(`select count(*) from publication where authorId=${req.query.id}`, (error, results) => {
         if (error)
             return res.status(500).json({ error });
         res.status(200).json({ results });
-    });
+     }); 
 };
 exports.getComment = (req, res) => {
     mysql.query(`select comment.*, publication.*, user.userId, user.pseudo, user.img, user.rights from comment left join publication on parentId=pubId left join user on writerId=userId order by comTime desc`, (error, results) => {
@@ -471,6 +489,8 @@ exports.delPublication = (req, res) => {
     const getAuthorIdQuery = `select authorId from publication where pubId=${req.query.pubId}`;
     mysqlCmd(getAuthorIdQuery)
         .then(results => {
+            // check authorize 
+            // self user and super user authorized
             if (results[0].authorId == req.decoded.userId || req.decoded.rights == 'super') {
                 const getPathImgsQuery = `select path from publication left join picture on pubId = whoId where pubId = ${req.query.pubId}`;
                 const delPubQuery = `delete publication, picture, comment, notif from publication left join picture on pubId = whoId left join comment on pubId = parentId  left join notif on comId = fromId where pubId = ${req.query.pubId}`;
@@ -498,6 +518,8 @@ exports.delComment = (req, res) => {
     const getWhereIdQuery = `select writerId from comment where comId=${req.query.comId}`;
     mysqlCmd(getWhereIdQuery)
         .then(results => {
+            // check authorize
+            // self user and super user authorized
             if (results[0].writerId == req.decoded.userId || req.decoded.rights == 'super') {
                 const delComQuery = `delete comment, notif from comment left join notif on comId = fromId where comId = ${req.query.comId}`;
                 mysqlCmd(delComQuery)
@@ -512,6 +534,8 @@ exports.delNotif = (req, res) => {
     const getWhereIdQuery = `select whereId from notif where notifId=${req.query.notifId}`;
     mysqlCmd(getWhereIdQuery)
         .then(results => {
+            // check authorize
+            // self user authorized
             if (results[0].whereId == req.decoded.userId) {
                 const delNotifQuery = `delete from notif where notifId=${req.query.notifId}`;
                 mysqlCmd(delNotifQuery)
@@ -523,6 +547,8 @@ exports.delNotif = (req, res) => {
         .catch( error => res.status(500).json({ error }));  
 };
 exports.delAccount = (req, res) => {
+    // check authorize
+    // self user authorized
     if (req.query.id == req.decoded.userId) {
         const getPathImgsQuery = `select path from user left join publication on userId = authorId left join picture on pubId = whoId where userId = ${req.query.id}`;
         const delAccQuery = `delete user, publication, picture, comment, notif from user left join publication on userId=authorId left join picture on pubId=whoId left join comment on userId=writerId left join notif on userId=whereId where userId=${req.query.id}`;

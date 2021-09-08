@@ -11,10 +11,12 @@ router.head("/team", auth, appCtrl.accessTeam);
 router.head("/autolog", auth, appCtrl.autoLog);
 
 router.get("/publish?:limit", auth, appCtrl.getPubs);
-router.get("/publish/user?:id", auth, appCtrl.getUserPubs);
+router.get("/publish/user", auth, appCtrl.getUserPubs);
 router.get("/publish/comment", auth, appCtrl.getComment);
 router.get("/publish/scroll?:lpubid", auth, appCtrl.pubScroll);
+router.get("/publish/user/scroll?:lpubid", auth, appCtrl.userPubScroll);
 router.get("/publish/count", auth, appCtrl.pubsCount);
+router.get("/publish/user/count", auth, appCtrl.userPubsCount);
 router.get("/notification/notifs", auth, appCtrl.getNotif);
 router.get("/team/users", auth, appCtrl.getUsers);
 

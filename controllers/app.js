@@ -37,7 +37,7 @@ exports.autoLog = (req, res) => {
 // get controllers
 
 exports.getPubs = (req, res) => {
-    const getPubsQuery = `select publication.*, user.userId, user.pseudo, user.img from publication left join user on authorId=userId ORDER BY time DESC limit ${req.query.limit}`;
+    const getPubsQuery = `select publication.*, user.userId, user.pseudo, user.img, user.rights from publication left join user on authorId=userId ORDER BY time DESC limit ${req.query.limit}`;
     mysql.query(getPubsQuery, (error, results) => {
        if (error)
            return res.status(500).json({ error });
@@ -45,7 +45,7 @@ exports.getPubs = (req, res) => {
     });
 };
 exports.getUserPubs = (req, res) => {
-    const getUserPubsQuery = `select userId, img, publication.* from user left join publication on userId=authorId where userId=${req.query.id} ORDER BY time DESC limit ${req.query.limit}`;
+    const getUserPubsQuery = `select userId, pseudo, img, rights, publication.* from user left join publication on userId=authorId where userId=${req.query.id} ORDER BY time DESC limit ${req.query.limit}`;
     mysql.query(getUserPubsQuery, (error, results) => {
        if (error)
            return res.status(500).json({ error });
@@ -66,7 +66,7 @@ exports.pubScroll = (req, res) => {
 exports.userPubScroll = (req, res) => {
     const lpubid = req.query.lpubid.id;
     const condition = lpubid != 0 ? `where pubId < ${lpubid} and userId=${req.query.id}` : '';
-    const userScrollQuery = `select user.userId, user.img, publication.* from user left join publication on userId=authorId ${condition} ORDER BY time DESC limit 2`;
+    const userScrollQuery = `select userId, pseudo, img, publication.* from user left join publication on userId=authorId ${condition} ORDER BY time DESC limit 2`;
     mysql.query(userScrollQuery, (error, results) => {
         if (error)
             return res.status(500).json({ error });

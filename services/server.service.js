@@ -60,9 +60,10 @@ const services = {
         return jwt.sign({ id: result.id }, process.env.SEC_SES_REFRESH, { expiresIn: process.env.SEC_SES_REFRESH_LIFE });
     },
     now() {
-
-        const second = DateTime.now().c.second;
-        return `${DateTime.now().setLocale('FR').toLocaleString(DateTime.DATETIME_MED)}:${second}`.replace(",", " à");
+        // uncomment and replace by this to get time with second
+        //const second = DateTime.now().c.second;
+        //return `${DateTime.now().setLocale('FR').toLocaleString(DateTime.DATETIME_MED)}:${second}`.replace(",", " à");
+        return `${DateTime.now().setLocale('FR').toLocaleString(DateTime.DATETIME_MED)}`.replace(",", " à");
     }
 };
 

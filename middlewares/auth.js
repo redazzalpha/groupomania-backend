@@ -10,7 +10,7 @@ const auth = (req, res, next) => {
                 return res.status(401).json({ error });
             // on locked account
             if (decoded.locked)
-                return res.status(401).json({ message: 'Error your account is locked', code: 'ER_ACC_LOC' });
+                return res.status(403).json({ message: 'Error your account is locked', code: 'ER_ACC_LOC' });
             req.decoded = decoded;
             next();
         });

@@ -16,7 +16,7 @@ function mysqlCmd(query) {
     });
 }
 
-// head controllers
+// controller head 
 
 exports.accessHome = (req, res) => {
     res.status(200).send();
@@ -34,10 +34,10 @@ exports.autoLog = (req, res) => {
     res.status(200).send();
 };
 
-// get controllers
+// controller get 
 
 exports.getPubs = (req, res) => {
-    const getPubsQuery = `select publication.*, user.userId, user.pseudo, user.img, user.rights from publication left join user on authorId=userId ORDER BY time DESC limit ${req.query.limit}`;
+    const getPubsQuery = `select publication.*, user.userId, user.pseudo, user.img, user.rights from publication left join user on authorId=userId ORDER BY pubId DESC limit ${req.query.limit}`;
     mysql.query(getPubsQuery, (error, results) => {
        if (error)
            return res.status(500).json({ error });
@@ -45,7 +45,7 @@ exports.getPubs = (req, res) => {
     });
 };
 exports.getUserPubs = (req, res) => {
-    const getUserPubsQuery = `select userId, pseudo, img, rights, publication.* from user left join publication on userId=authorId where userId=${req.query.id} ORDER BY time DESC limit ${req.query.limit}`;
+    const getUserPubsQuery = `select user.userId, user.pseudo, user.img, user.rights, publication.* from user left join publication on userId=authorId where userId=${req.query.id} ORDER BY pubId DESC limit ${req.query.limit}`;
     mysql.query(getUserPubsQuery, (error, results) => {
        if (error)
            return res.status(500).json({ error });
@@ -55,7 +55,7 @@ exports.getUserPubs = (req, res) => {
 exports.pubScroll = (req, res) => {
     const lpubid = req.query.lpubid.id;
     const condition = lpubid != 0 ? `where pubId < ${lpubid}` : '';
-    const scrollQuery = `select publication.*, user.userId, user.pseudo, user.img from publication left join user on authorId=userId  ${condition}  ORDER BY time DESC limit 2`;
+    const scrollQuery = `select publication.*, user.userId, user.pseudo, user.img, user.rights from publication left join user on authorId=userId  ${condition}  ORDER BY pubId DESC limit 2`;
     mysql.query(scrollQuery, (error, results) => {
 
         if (error)
@@ -66,7 +66,7 @@ exports.pubScroll = (req, res) => {
 exports.userPubScroll = (req, res) => {
     const lpubid = req.query.lpubid.id;
     const condition = lpubid != 0 ? `where pubId < ${lpubid} and userId=${req.query.id}` : '';
-    const userScrollQuery = `select userId, pseudo, img, publication.* from user left join publication on userId=authorId ${condition} ORDER BY time DESC limit 2`;
+    const userScrollQuery = `select user.userId, user.pseudo, user.img, user.rights, publication.* from user left join publication on userId=authorId ${condition} ORDER BY pubId DESC limit 2`;
     mysql.query(userScrollQuery, (error, results) => {
         if (error)
             return res.status(500).json({ error });
@@ -88,14 +88,14 @@ exports.userPubsCount = (req, res) => {
      }); 
 };
 exports.getComment = (req, res) => {
-    mysql.query(`select comment.*, publication.*, user.userId, user.pseudo, user.img, user.rights from comment left join publication on parentId=pubId left join user on writerId=userId order by comTime desc`, (error, results) => {
+    mysql.query(`select comment.*, publication.*, user.userId, user.pseudo, user.img, user.rights from comment left join publication on parentId=pubId left join user on writerId=userId order by comId desc`, (error, results) => {
         if (error)
             return res.status(500).json({ error });
         res.status(200).json({ results });
     });
 };
 exports.getNotif = (req, res) => {
-    const getNotifQuery = `select comment.*, user.userId, user.pseudo, user.img, user.rights, publication.*, notif.* from notif left join comment on fromId=comId left join user on writerId=userId left join publication on parentId = pubId order by comTime desc`;
+    const getNotifQuery = `select comment.*, user.userId, user.pseudo, user.img, user.rights, publication.*, notif.* from notif left join comment on fromId=comId left join user on writerId=userId left join publication on parentId = pubId order by comId desc`;
     mysqlCmd(getNotifQuery)
         .then(results => res.status(200).json({ results }) )
         .catch( error => res.status(500).json({ error }));
@@ -107,7 +107,7 @@ exports.getUsers = (req, res) => {
         .catch( error => res.status(500).json({ error }));
 };
 
-// post controllers
+// controller post 
 
 exports.publish = (req, res) => {
     if (req.body && services.isNotEmpty(req.body.publication)) {
@@ -318,7 +318,7 @@ exports.token = (req, res) => {
     else res.status(401).json({ message: "Failed verify token: Bearer token not found", code: "ER_BEA_TKN" });
 };
 
-// patch controllers
+// controller patch 
 
 exports.uptProfDesc = (req, res) => {
     // Empty string is authorized 
@@ -483,7 +483,7 @@ exports.unlockUser = (req, res) => {
     else res.status(500).json({ message: "Bad query error", code: "ER_BAD_QUE" });
 };
 
-// delete controllers
+// controller delete 
 
 exports.delPublication = (req, res) => {
     const getAuthorIdQuery = `select authorId from publication where pubId=${req.query.pubId}`;
